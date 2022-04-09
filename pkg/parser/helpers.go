@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"errors"
 	"io"
 	"io/ioutil"
 	"regexp"
@@ -11,10 +12,20 @@ import (
 
 var (
 	reStructPrefix   = regexp.MustCompile(`type\s+[a-zA-Z0-9]+\s+struct\s?{`)
-	reStructName     = regexp.MustCompile(`[a-zA-Z0-9]+`)
+	reToken          = regexp.MustCompile(`[a-zA-Z0-9]+`)
 	reIsComment      = regexp.MustCompile(`^\s*//.*`)
 	reExtractComment = regexp.MustCompile(`[^/]+`)
-	reTag            = regexp.MustCompile("`.*`") //TODO： ut
+	reTag            = regexp.MustCompile("`.*`")
+	//By default . does not match newlines. To change that, use the s flag.  https://go.dev/src/regexp/syntax/doc.go
+	reHandlerDoc         = regexp.MustCompile(`(?sU)@doc\(.*\)`)
+	reHanderHander       = regexp.MustCompile(`@handler.*`)
+	regUnicodeStr        = regexp.MustCompile(`[^ \n\t]+`)
+	reEmptyLineWithSpace = regexp.MustCompile(`^\s*$`)
+	reHandlerToken       = regexp.MustCompile(`[^\s\t]+`)
+	reBracesContent      = regexp.MustCompile(`{.*}`)
+
+	ErrMultiHandlerFound     = errors.New("multi handler def found")
+	ErrInvalidHttpHandlerDef = errors.New("invalid http handler def")
 )
 
 // dir 相对路径
@@ -38,7 +49,7 @@ func extractStruct(dir string) ([]types.StructRecord, error) {
 
 //从结构体抽取 struct 定义块
 //必须保证注释中不包含字符 "{" 或 "}"
-func extractStructFromStream(r io.Reader) ([]string, error) {
+func extractBracesBlock(r io.Reader) ([]string, error) {
 	content, err := ioutil.ReadAll(r)
 	if err != nil {
 		return nil, err
@@ -74,4 +85,16 @@ func extractStructFromStream(r io.Reader) ([]string, error) {
 
 func isCommentLine(s string) bool {
 	return len(reIsComment.FindAllString(s, -1)) > 0
+}
+
+func trimOmitempty(s string) string {
+	return strings.Split(strings.Trim(s, `"`), ",")[0]
+}
+
+func usingWhiteSpace(s string) string {
+	return strings.Replace(s, "\t", " ", -1)
+}
+
+func trimSpace(s string) string {
+	return strings.Trim(s, " ")
 }

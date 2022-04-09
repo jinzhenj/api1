@@ -11,7 +11,7 @@ func ParseStruct(relativePath, s string) *types.StructRecord {
 	fields := make([]types.Field, 0)
 	contents := strings.Split(s, "\n")
 
-	ret.Name = reStructName.FindAllString(contents[0], -1)[1]
+	ret.Name = reToken.FindAllString(contents[0], -1)[1]
 
 	comments := make([]string, 0)
 	for _, line := range contents[1:] {
@@ -39,10 +39,7 @@ func parserField(s string, field *types.Field) {
 	ns := strings.TrimLeft(usingWhiteSpace(s), " ")
 	strs := strings.Split(ns, " ")
 	field.Name = strings.Trim(strs[0], " ")
-	if strings.Contains(strs[1], "[]") {
-		field.IsArray = true
-	}
-	field.Kind = strings.Trim(strs[1], " []")
+	field.Kind = types.TypeD{Kind: strs[1]}
 
 	tagContent := reTag.FindString(s)
 	if len(tagContent) > 0 {
@@ -83,12 +80,4 @@ func parserTag(s string) *types.Tag {
 		}
 	}
 	return &ret
-}
-
-func trimOmitempty(s string) string {
-	return strings.Split(strings.Trim(s, `"`), ",")[0]
-}
-
-func usingWhiteSpace(s string) string {
-	return strings.Replace(s, "\t", " ", -1)
 }

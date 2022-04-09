@@ -31,7 +31,7 @@ func TestRegs(t *testing.T) {
 
 	t.Run("found_struct_name", func(t *testing.T) {
 		t1 := "type User struct {"
-		s := reStructName.FindAllString(t1, -1)
+		s := reToken.FindAllString(t1, -1)
 		assert.True(t, len(s) > 0)
 		assert.Equal(t, s[1], "User")
 
@@ -71,6 +71,82 @@ func TestRegs(t *testing.T) {
 		assert.Equal(t, s[0], t1)
 
 	})
+
+	t.Run("found_handler_doc", func(t *testing.T) {
+		t1 := `
+		@xxxx 
+		@doc(
+			summary: hello
+		)
+		@handler login
+		`
+
+		t2 := `
+
+		@doc(
+			summary: hello
+		)
+		@handler getUserInfo
+		get /api/user/:id (pkg.config.UserInfoReq) return (pkg.config.UserInfoReply)
+		
+		`
+
+		expected := `
+		@doc(
+			summary: hello
+		)
+		`
+		s := reHandlerDoc.FindAllString(t1, -1)
+		assert.True(t, len(s) > 0)
+		assert.Equal(t, s[0], strings.Trim(expected, " \n\t"))
+
+		s = reHandlerDoc.FindAllString(t2, -1)
+		assert.True(t, len(s) == 1)
+		assert.Equal(t, s[0], strings.Trim(expected, " \n\t"))
+	})
+
+	t.Run("found_handler_handler", func(t *testing.T) {
+		t1 := `
+		@handler login
+	`
+		s := reHanderHander.FindAllString(t1, -1)
+		assert.True(t, len(s) > 0)
+		assert.Equal(t, s[0], strings.Trim(t1, " \n\t"))
+
+	})
+
+	t.Run("found_empty_line_spaces", func(t *testing.T) {
+
+		t1 := `   `
+		t2 := ` abc `
+
+		s := reEmptyLineWithSpace.FindAllString(t1, -1)
+		assert.True(t, len(s) == 1)
+		assert.True(t, t1 == s[0])
+
+		s = reEmptyLineWithSpace.FindAllString(t2, -1)
+		assert.True(t, len(s) == 0)
+	})
+
+	t.Run("found_http_handler_token", func(t *testing.T) {
+		t1 := "  	get /api/user/search (pkg.config.UserSearchReq) returns (pkg.config.UserInfoReply) "
+
+		s := reHandlerToken.FindAllString(t1, -1)
+		res := []string{"get", "/api/user/search", "(pkg.config.UserSearchReq)", "returns", "(pkg.config.UserInfoReply)"}
+		assert.True(t, len(s) == 5)
+		assert.Equal(t, s[0], res[0])
+		assert.Equal(t, s[1], res[1])
+		assert.Equal(t, s[2], res[2])
+		assert.Equal(t, s[3], res[3])
+		assert.Equal(t, s[4], res[4])
+	})
+
+	t.Run("found_braces_content", func(t *testing.T) {
+		t1 := "abc{test1}"
+		s := reBracesContent.FindAllString(t1, 1)
+		assert.True(t, len(s) == 1)
+		assert.Equal(t, s[0], "{test1}")
+	})
 }
 
 func TestIsComment(t *testing.T) {
@@ -88,7 +164,7 @@ ID int
  // hello world
 Name string` + "`json:\"name\"` \n RoleIDs []int64 \n} ssos"
 
-		res, err := extractStructFromStream(bytes.NewReader([]byte(t1)))
+		res, err := extractBracesBlock(bytes.NewReader([]byte(t1)))
 		assert.NoError(t, err)
 
 		assert.Equal(t, 1, len(res))
@@ -97,7 +173,7 @@ Name string` + "`json:\"name\"` \n RoleIDs []int64 \n} ssos"
 
 		// two struct
 		t2 := t1 + t1
-		res, err = extractStructFromStream(bytes.NewReader([]byte(t2)))
+		res, err = extractBracesBlock(bytes.NewReader([]byte(t2)))
 		assert.NoError(t, err)
 
 		assert.Equal(t, 2, len(res))

@@ -31,18 +31,18 @@ func TestParserField(t *testing.T) {
 		parserField(t1, &ret1)
 		assert.Equal(t, *ret1.Tag, types.Tag{Json: "user", Binding: true, Form: "user"})
 		ret1.Tag = nil
-		assert.Equal(t, ret1, types.Field{Name: "User", Kind: "string"})
+		assert.Equal(t, ret1, types.Field{Name: "User", Kind: types.TypeD{Kind: "string"}})
 
 		var ret2 types.Field
 		parserField(t2, &ret2)
 		assert.Equal(t, *ret2.Tag, types.Tag{Json: "RoleIDs"})
 		ret2.Tag = nil
-		assert.Equal(t, ret2, types.Field{Name: "RoleIDs", Kind: "int", IsArray: true})
+		assert.Equal(t, ret2, types.Field{Name: "RoleIDs", Kind: types.TypeD{Kind: "[]int"}})
 
 		var ret3 types.Field
 		parserField(t3, &ret3)
 		ret3.Tag = nil
-		assert.Equal(t, ret2, types.Field{Name: "RoleIDs", Kind: "int", IsArray: true})
+		assert.Equal(t, ret2, types.Field{Name: "RoleIDs", Kind: types.TypeD{Kind: "[]int"}})
 	})
 
 }
@@ -61,9 +61,9 @@ func TestParserStruct(t *testing.T) {
 		assert.Equal(t, record.SInfo, types.SourceInfo{FileName: "test/"})
 		assert.True(t, len(record.Fields) == 2)
 		record.Fields[0].Tag = nil
-		assert.Equal(t, record.Fields[0], types.Field{Name: "Id", Kind: "int", Comments: " just id"})
+		assert.Equal(t, record.Fields[0], types.Field{Name: "Id", Kind: types.TypeD{Kind: "int"}, Comments: " just id"})
 		record.Fields[1].Tag = nil
-		assert.Equal(t, record.Fields[1], types.Field{Name: "Age", Kind: "int", Comments: "hello\nworld"})
+		assert.Equal(t, record.Fields[1], types.Field{Name: "Age", Kind: types.TypeD{Kind: "int"}, Comments: "hello\nworld"})
 
 	})
 
