@@ -164,7 +164,7 @@ ID int
  // hello world
 Name string` + "`json:\"name\"` \n RoleIDs []int64 \n} ssos"
 
-		res, err := extractBracesBlock(bytes.NewReader([]byte(t1)))
+		res, err := extractBracesBlock(testLogger, bytes.NewReader([]byte(t1)), reStructPrefix)
 		assert.NoError(t, err)
 
 		assert.Equal(t, 1, len(res))
@@ -173,12 +173,31 @@ Name string` + "`json:\"name\"` \n RoleIDs []int64 \n} ssos"
 
 		// two struct
 		t2 := t1 + t1
-		res, err = extractBracesBlock(bytes.NewReader([]byte(t2)))
+		res, err = extractBracesBlock(testLogger, bytes.NewReader([]byte(t2)), reStructPrefix)
 		assert.NoError(t, err)
 
 		assert.Equal(t, 2, len(res))
 		assert.Equal(t, 1, strings.Count(res[0], "{"))
 		assert.Equal(t, 1, strings.Count(res[0], "}"))
+
+		t3 := `
+		service user {
+
+			@doc(
+				summary: 注册
+			)
+			@handler register
+			post /api/user/register (pkg.types.RegisterReq)
+	  
+		} sss
+		`
+		res, err = extractBracesBlock(testLogger, bytes.NewReader([]byte(t3)), reSvcDefPrefix)
+		assert.NoError(t, err)
+
+		assert.Equal(t, 1, len(res))
+		assert.Equal(t, 1, strings.Count(res[0], "{"))
+		assert.Equal(t, 1, strings.Count(res[0], "}"))
+
 	})
 
 }

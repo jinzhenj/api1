@@ -14,10 +14,11 @@ type SourceInfo struct {
 }
 
 type Tag struct {
-	Json    string
-	Bson    string
-	Binding bool
-	Form    string
+	Json     string
+	Bson     string
+	Position string
+	Binding  bool
+	Form     string
 }
 
 type TypeD struct {
@@ -55,10 +56,10 @@ func (o *TypeD) GetMapKind() []string {
 }
 
 type Field struct {
-	Name     string
-	Tag      *Tag
-	Kind     TypeD
-	Comments string
+	Name     string `json:"name,omitempty"`
+	Tag      *Tag   `json:"tag,omitempty"`
+	Kind     TypeD  `json:"kind,omitempty"`
+	Comments string `json:"comments,omitempty"`
 }
 
 type StructRecord struct {

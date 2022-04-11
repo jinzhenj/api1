@@ -71,6 +71,8 @@ func parserTag(s string) *types.Tag {
 			if trimOmitempty(keys[1]) == "required" {
 				ret.Binding = true
 			}
+		case "position":
+			ret.Position = trimOmitempty(keys[1])
 		case "form":
 			ret.Form = trimOmitempty(keys[1])
 		case "bson":

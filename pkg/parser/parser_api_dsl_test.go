@@ -18,16 +18,21 @@ func TestParserHandler(t *testing.T) {
 	})
 
 	t.Run("parser_handler_body_method", func(t *testing.T) {
+
 		t1 := `(pkg.config.UserSearchReq)`
 		res := parseHandlerBodyMethod(t1)
-		assert.Equal(t, *res, types.HandlerBodyParams{Name: "pkg.config.UserSearchReq"})
+		assert.Equal(t, *res, types.HandlerBodyParams{
+			Name:         "pkg.config.UserSearchReq",
+			RelatedNames: map[string]bool{"pkg.config.UserSearchReq": true}})
 
 		t2 := `(pkg.config.UserSearchReq{list=[]string, records=[]int})`
 		res = parseHandlerBodyMethod(t2)
 		m := make(map[string]types.TypeD)
 		m["list"] = types.TypeD{Kind: "[]string"}
 		m["records"] = types.TypeD{Kind: "[]int"}
-		assert.Equal(t, *res, types.HandlerBodyParams{Name: "pkg.config.UserSearchReq", EmbedReplaces: m})
+		assert.Equal(t, *res, types.HandlerBodyParams{
+			Name:         "pkg.config.UserSearchReq",
+			RelatedNames: map[string]bool{"pkg.config.UserSearchReq": true, "[]string": true, "[]int": true}})
 	})
 
 	t.Run("parser_handler_info", func(t *testing.T) {
@@ -35,8 +40,12 @@ func TestParserHandler(t *testing.T) {
 		var handler types.HttpHandler
 		err := parseHanlderInfo(testLogger, t1, &handler)
 		assert.NoError(t, err)
-		assert.Equal(t, *handler.Req, types.HandlerBodyParams{Name: "pkg.config.UserSearchReq"})
-		assert.Equal(t, *handler.Res, types.HandlerBodyParams{Name: "pkg.config.UserInfoReply"})
+		assert.Equal(t, *handler.Req, types.HandlerBodyParams{
+			Name:         "pkg.config.UserSearchReq",
+			RelatedNames: map[string]bool{"pkg.config.UserSearchReq": true}})
+		assert.Equal(t, *handler.Res, types.HandlerBodyParams{
+			Name:         "pkg.config.UserInfoReply",
+			RelatedNames: map[string]bool{"pkg.config.UserInfoReply": true}})
 		handler.Req = nil
 		handler.Res = nil
 		assert.Equal(t, handler, types.HttpHandler{Endpoint: "/api/user/search", Method: "get"})
@@ -45,7 +54,9 @@ func TestParserHandler(t *testing.T) {
 		var handler2 types.HttpHandler
 		err = parseHanlderInfo(testLogger, t2, &handler2)
 		assert.NoError(t, err)
-		assert.Equal(t, *handler2.Res, types.HandlerBodyParams{Name: "pkg.config.UserInfoReply"})
+		assert.Equal(t, *handler2.Res, types.HandlerBodyParams{
+			Name:         "pkg.config.UserInfoReply",
+			RelatedNames: map[string]bool{"pkg.config.UserInfoReply": true}})
 		handler2.Res = nil
 		assert.Equal(t, handler2, types.HttpHandler{Endpoint: "/api/user/search", Method: "get"})
 	})
@@ -81,5 +92,43 @@ func TestParserHandler(t *testing.T) {
 		assert.Equal(t, res.Method, "get")
 		assert.Equal(t, res.Endpoint, "/api/user/:id")
 	})
+
+	t.Run("parser_api_def", func(t *testing.T) {
+		t1 := `
+		service user {
+
+			@doc(
+				summary: 注册
+			)
+			@handler register
+			post /api/user/register (pkg.types.RegisterReq)
+	  
+		} sss
+		`
+		res, err := ParserApiDef(testLogger, t1)
+		assert.NoError(t, err)
+		assert.Equal(t, len(res), 1)
+		assert.Equal(t, res[0].Name, "register")
+		assert.Equal(t, res[0].Method, "post")
+		assert.Equal(t, res[0].Endpoint, "/api/user/register")
+	})
+}
+
+func TestExtractNestedReplacedStruct(t *testing.T) {
+	t1 := `pkg.config.UserSearchReq`
+	t2 := `pkg.config.UserSearchReq{list=[]string , records=[]int}`
+	t3 := `pkg.config.UserSearchReq{list=[]string , records=[]int , pager=Paged{count=int}}`
+
+	name, m := extractNestedReplacedStruct(t1)
+	assert.Equal(t, name, "pkg.config.UserSearchReq")
+	assert.Nil(t, m)
+
+	name, m = extractNestedReplacedStruct(t2)
+	assert.Equal(t, name, "pkg.config.UserSearchReq")
+	assert.Equal(t, m, map[string]string{"list": "[]string", "records": "[]int"})
+
+	name, m = extractNestedReplacedStruct(t3)
+	assert.Equal(t, name, "pkg.config.UserSearchReq")
+	assert.Equal(t, m, map[string]string{"list": "[]string", "records": "[]int", "pager": "Paged{count=int"})
 
 }

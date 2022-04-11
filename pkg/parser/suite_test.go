@@ -14,6 +14,6 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	testLogger = log.Development(3)
+	testLogger = log.Development(5)
 	os.Exit(m.Run())
 }

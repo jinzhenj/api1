@@ -17,8 +17,8 @@ type HandlerDoc struct {
 }
 
 type HandlerBodyParams struct {
-	Name          string
-	EmbedReplaces map[string]TypeD // existed embed field that need replaced
+	Name         string
+	RelatedNames map[string]bool
 }
 
 func (o *HandlerBodyParams) IsThisStruct(relativeFilePath, structName string) bool {

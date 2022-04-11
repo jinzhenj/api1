@@ -23,13 +23,13 @@ func TestParserTag(t *testing.T) {
 
 func TestParserField(t *testing.T) {
 	t.Run("parser_field", func(t *testing.T) {
-		t1 := "User string " + "`" + `json:"user" binding:"required" form:"user,omitempty"` + "`"
+		t1 := "User string " + "`" + `json:"user" binding:"required" position:"path" form:"user,omitempty"` + "`"
 		t2 := "RoleIDs []int"
 		t3 := "  RoleIDs []int"
 
 		var ret1 types.Field
 		parserField(t1, &ret1)
-		assert.Equal(t, *ret1.Tag, types.Tag{Json: "user", Binding: true, Form: "user"})
+		assert.Equal(t, *ret1.Tag, types.Tag{Json: "user", Binding: true, Form: "user", Position: "path"})
 		ret1.Tag = nil
 		assert.Equal(t, ret1, types.Field{Name: "User", Kind: types.TypeD{Kind: "string"}})
 

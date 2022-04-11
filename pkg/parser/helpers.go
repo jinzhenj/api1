@@ -7,22 +7,26 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/go-logr/logr"
 	"github.com/go-swagger/pkg/types"
 )
 
 var (
-	reStructPrefix   = regexp.MustCompile(`type\s+[a-zA-Z0-9]+\s+struct\s?{`)
+	reStructPrefix = regexp.MustCompile(`type\s+[a-zA-Z0-9]+\s+struct\s?{`)
+	reSvcDefPrefix = regexp.MustCompile(`service\s+[a-zA-Z0-9]+\s{`)
+
 	reToken          = regexp.MustCompile(`[a-zA-Z0-9]+`)
 	reIsComment      = regexp.MustCompile(`^\s*//.*`)
 	reExtractComment = regexp.MustCompile(`[^/]+`)
 	reTag            = regexp.MustCompile("`.*`")
 	//By default . does not match newlines. To change that, use the s flag.  https://go.dev/src/regexp/syntax/doc.go
-	reHandlerDoc         = regexp.MustCompile(`(?sU)@doc\(.*\)`)
-	reHanderHander       = regexp.MustCompile(`@handler.*`)
-	regUnicodeStr        = regexp.MustCompile(`[^ \n\t]+`)
-	reEmptyLineWithSpace = regexp.MustCompile(`^\s*$`)
-	reHandlerToken       = regexp.MustCompile(`[^\s\t]+`)
-	reBracesContent      = regexp.MustCompile(`{.*}`)
+	reHandlerDoc             = regexp.MustCompile(`(?sU)@doc\(.*\)`)
+	reHanderHander           = regexp.MustCompile(`@handler.*`)
+	regUnicodeStr            = regexp.MustCompile(`[^ \n\t]+`)
+	reEmptyLineWithSpace     = regexp.MustCompile(`^\s*$`)
+	reHandlerToken           = regexp.MustCompile(`[^\s\t]+`)
+	reBracesContent          = regexp.MustCompile(`{.*}`)
+	reMultiLineBracesContent = regexp.MustCompile(`(?sm){.*}`)
 
 	ErrMultiHandlerFound     = errors.New("multi handler def found")
 	ErrInvalidHttpHandlerDef = errors.New("invalid http handler def")
@@ -49,7 +53,7 @@ func extractStruct(dir string) ([]types.StructRecord, error) {
 
 //从结构体抽取 struct 定义块
 //必须保证注释中不包含字符 "{" 或 "}"
-func extractBracesBlock(r io.Reader) ([]string, error) {
+func extractBracesBlock(log logr.Logger, r io.Reader, pattern *regexp.Regexp) ([]string, error) {
 	content, err := ioutil.ReadAll(r)
 	if err != nil {
 		return nil, err
@@ -62,6 +66,7 @@ func extractBracesBlock(r io.Reader) ([]string, error) {
 	var leftQ int
 
 	for _, line := range strings.Split(string(content), "\n") {
+		log.V(8).Info("extractBracesBlock", "line", line, "leftQ", leftQ)
 		if extractStructDef {
 			current = append(current, line)
 			leftQ += strings.Count(line, "{")
@@ -72,7 +77,7 @@ func extractBracesBlock(r io.Reader) ([]string, error) {
 				current = make([]string, 0)
 			}
 		} else {
-			if reStructPrefix.FindAllString(line, 1) != nil {
+			if pattern.FindAllString(line, 1) != nil {
 				extractStructDef = true
 				current = append(current, line)
 				leftQ = 1
