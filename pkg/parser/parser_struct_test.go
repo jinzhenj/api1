@@ -56,9 +56,8 @@ func TestParserStruct(t *testing.T) {
   //world
   Age int
   } `
-		record := ParseStruct("test/", t1)
+		record := ParseStruct(t1)
 		assert.Equal(t, record.Name, "User")
-		assert.Equal(t, record.SInfo, types.SourceInfo{FileName: "test/"})
 		assert.True(t, len(record.Fields) == 2)
 		record.Fields[0].Tag = nil
 		assert.Equal(t, record.Fields[0], types.Field{Name: "Id", Kind: types.TypeD{Kind: "int"}, Comments: " just id"})

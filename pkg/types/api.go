@@ -18,6 +18,7 @@ type HandlerDoc struct {
 
 type HandlerBodyParams struct {
 	Name         string
+	Value        string
 	RelatedNames map[string]bool
 }
 
@@ -30,6 +31,7 @@ func (o *HandlerBodyParams) IsThisStruct(relativeFilePath, structName string) bo
 }
 
 type HttpHandler struct {
+	Resource string
 	Name     string
 	Method   string
 	Endpoint string

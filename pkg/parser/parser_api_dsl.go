@@ -2,6 +2,7 @@ package parser
 
 import (
 	"bytes"
+	"io/ioutil"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -13,6 +14,14 @@ const (
 	retDef              = "return"
 	maxEmbedStructDepth = 5
 )
+
+func ParsrApiDefFile(log logr.Logger, fileName string) ([]types.HttpHandler, error) {
+	content, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return nil, err
+	}
+	return ParserApiDef(log, string(content))
+}
 
 func ParserApiDef(log logr.Logger, content string) ([]types.HttpHandler, error) {
 	ret := make([]types.HttpHandler, 0)
@@ -28,12 +37,16 @@ func ParserApiDef(log logr.Logger, content string) ([]types.HttpHandler, error) 
 		if len(noBraceContents) == 0 {
 			continue
 		}
-		handler, err := parserHandler(log, strings.Trim(noBraceContents[0], " \n\t{}"))
-		if err != nil {
-			log.Error(err, "failed to parse hanlder", "content", line)
-			return nil, err
+		resource := trimSpace(strings.Split(strings.Trim(reMultiLineBracesContent.ReplaceAllString(line, ""), " \n\t"), " ")[1])
+		for _, block := range extractHanderDefBlocks(noBraceContents[0]) {
+			handler, err := parserHandler(log, strings.Trim(block, " \n\t{}"))
+			if err != nil {
+				log.Error(err, "failed to parse hanlder", "block", block)
+				return nil, err
+			}
+			handler.Resource = resource
+			ret = append(ret, *handler)
 		}
-		ret = append(ret, *handler)
 	}
 	return ret, nil
 }
@@ -44,7 +57,6 @@ func parserHandler(log logr.Logger, s string) (*types.HttpHandler, error) {
 	log.V(8).Info("parser Handler", "input", s, "normalized input", ns)
 
 	// may get doc
-
 	docCotents := reHandlerDoc.FindAllString(ns, -1)
 	if len(docCotents) != 0 {
 		ret.Doc = parserDoc(log, docCotents[0])
@@ -148,7 +160,7 @@ func parseHandlerBodyMethod(s string) *types.HandlerBodyParams {
 		tmp := make([]string, 0)
 
 		for _, line := range params {
-			newName, m := extractNestedReplacedStruct(line)
+			newName, m := ExtractNestedReplacedStruct(line)
 			namesMap[newName] = true
 
 			for _, val := range m {
@@ -158,10 +170,11 @@ func parseHandlerBodyMethod(s string) *types.HandlerBodyParams {
 		params = tmp
 	}
 	ret.RelatedNames = namesMap
+	ret.Value = s
 	return &ret
 }
 
-func extractNestedReplacedStruct(s string) (string, map[string]string) {
+func ExtractNestedReplacedStruct(s string) (string, map[string]string) {
 	idx := strings.Index(s, "{")
 	if idx == -1 {
 		return s, nil

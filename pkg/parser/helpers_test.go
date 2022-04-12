@@ -201,3 +201,23 @@ Name string` + "`json:\"name\"` \n RoleIDs []int64 \n} ssos"
 	})
 
 }
+
+func TestExtractHanderDefBlocks(t *testing.T) {
+	t1 := `
+
+		@doc(
+			summary: 注册
+		)
+		@handler register
+		post /api/user/register (pkg.types.RegisterReq)
+  
+		@doc(
+			summary: 登录
+		)
+		@handler login
+		post /api/user/login (pkg.config.LoginReq)
+  
+	`
+	records := extractHanderDefBlocks(t1)
+	assert.Equal(t, len(records), 2)
+}

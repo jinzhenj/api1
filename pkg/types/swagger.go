@@ -2,11 +2,13 @@ package types
 
 import "encoding/json"
 
-type SwaggerEndpointStruct struct {
-	Endpoints map[string]SwaggerEndpointHandler `json:"endpoints,omitempty"`
-}
+type SwaggerEndpointStruct map[string]SwaggerSingleResourceApi
+
+type SwaggerSingleResourceApi map[string]SwaggerEndpointHandler
 
 type SwaggerEndpointHandler struct {
+	Endpoint   string                           `json:"-"`
+	Method     string                           `json:"-"`
 	Produces   []string                         `json:"produces,omitempty"`
 	Tags       []string                         `json:"tags,omitempty"`
 	Summary    string                           `json:"summary,omitempty"`
@@ -21,12 +23,12 @@ type SwaggerResponseSchema struct {
 
 // swagger http request related
 type SwaggerParameters struct {
-	Type        string              `json:"type,omitempty"`
-	Description string              `json:"description,omitempty"`
-	Name        string              `json:"name,omitempty"`
-	In          string              `json:"in,omitempty"`
-	Required    bool                `json:"required,omitempty"`
-	Schema      EmbedSwaggerItemDef `json:"schema,omitempty"`
+	Type        string               `json:"type,omitempty"`
+	Description string               `json:"description,omitempty"`
+	Name        string               `json:"name,omitempty"`
+	In          string               `json:"in,omitempty"`
+	Required    bool                 `json:"required,omitempty"`
+	Schema      *EmbedSwaggerItemDef `json:"schema,omitempty"`
 }
 
 // swagger definitions related
@@ -37,12 +39,22 @@ type SwaggerObjectDef struct {
 }
 
 type SwaggerItemDef struct {
-	EmbedSwaggerItemDef `json:"embed_swagger_item_def,omitempty"`
-	Items               map[string]EmbedSwaggerItemDef `json:"items,omitempty"`
+	Type  string              `json:"type,omitempty"`
+	Items EmbedSwaggerItemDef `json:"items,omitempty"`
 }
 
 type EmbedSwaggerItemDef struct {
 	Type        string `json:"type,omitempty"`
 	Description string `json:"description,omitempty"`
 	Ref         string `json:"$ref,omitempty"`
+}
+
+// for hacked struct
+type HelperSwaggerAllOf struct {
+	AllOf []json.RawMessage `json:"allOf,omitempty"`
+}
+
+type HelperSwaggerProperties struct {
+	Type       string                     `json:"type,omitempty"`
+	Properties map[string]json.RawMessage `json:"properties,omitempty"`
 }

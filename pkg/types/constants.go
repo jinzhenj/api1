@@ -13,3 +13,11 @@ const (
 	HandlerAttrDoc     HandlerAttr = "@doc"
 	HandlerAttrHandler HandlerAttr = "@handler"
 )
+
+type ParamPositionKind string
+
+const (
+	ParamPathPositionKind  ParamPositionKind = "path"
+	ParamQueryPositionKind ParamPositionKind = "query"
+	ParamBodyPositionKind  ParamPositionKind = "body"
+)

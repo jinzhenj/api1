@@ -1,13 +1,70 @@
 package parser
 
 import (
+	"bytes"
+	"io/ioutil"
 	"strings"
 
+	"github.com/go-logr/logr"
+
 	"github.com/go-swagger/pkg/types"
+	"github.com/go-swagger/pkg/utils"
 )
 
-func ParseStruct(relativePath, s string) *types.StructRecord {
-	ret := types.StructRecord{SInfo: types.SourceInfo{FileName: relativePath}}
+func ParserStructFromDirs(log logr.Logger, dirs []string) ([]types.StructRecord, error) {
+	fliter := func(fn string) bool {
+		return strings.HasSuffix(fn, ".go")
+	}
+
+	files := make([]string, 0)
+
+	for _, dir := range dirs {
+		cfiles, err := utils.ListFiles(dir, fliter)
+		if err != nil {
+			return nil, err
+		}
+		files = append(files, cfiles...)
+	}
+
+	ret := make([]types.StructRecord, 0)
+	for _, fileName := range files {
+		records, err := ParserStructFromFile(log, fileName)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, records...)
+	}
+
+	return ret, nil
+}
+
+func ParserStructFromFile(log logr.Logger, fileName string) ([]types.StructRecord, error) {
+	byteData, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return nil, err
+	}
+
+	mayHandlerStrContent, err := extractBracesBlock(log, bytes.NewReader([]byte(byteData)), reStructPrefix)
+	if err != nil {
+		log.Error(err, "failed to parse go struct when extract block", "content", byteData)
+		return nil, err
+	}
+	log.V(6).Info("parser_struct", "found blocks", mayHandlerStrContent)
+
+	ret := make([]types.StructRecord, 0)
+	for _, content := range mayHandlerStrContent {
+		record := ParseStruct(content)
+		if record != nil {
+			record.SInfo = types.SourceInfo{FileName: fileName}
+			ret = append(ret, *record)
+		}
+	}
+	return ret, nil
+}
+
+// real work function
+func ParseStruct(s string) *types.StructRecord {
+	var ret types.StructRecord
 	fields := make([]types.Field, 0)
 	contents := strings.Split(s, "\n")
 
@@ -37,8 +94,8 @@ func ParseStruct(relativePath, s string) *types.StructRecord {
 // underlayer functions
 func parserField(s string, field *types.Field) {
 	ns := strings.TrimLeft(usingWhiteSpace(s), " ")
-	strs := strings.Split(ns, " ")
-	field.Name = strings.Trim(strs[0], " ")
+	strs := reHandlerToken.FindAllString(ns, -1)
+	field.Name = strs[0]
 	field.Kind = types.TypeD{Kind: strs[1]}
 
 	tagContent := reTag.FindString(s)
@@ -52,6 +109,7 @@ func parserField(s string, field *types.Field) {
 	}
 }
 
+//TODO: use regexp
 func parserTag(s string) *types.Tag {
 	var ret types.Tag
 	for _, str := range strings.Split(strings.Trim(s, "`"), " ") {

@@ -23,6 +23,7 @@ func TestParserHandler(t *testing.T) {
 		res := parseHandlerBodyMethod(t1)
 		assert.Equal(t, *res, types.HandlerBodyParams{
 			Name:         "pkg.config.UserSearchReq",
+			Value:        t1,
 			RelatedNames: map[string]bool{"pkg.config.UserSearchReq": true}})
 
 		t2 := `(pkg.config.UserSearchReq{list=[]string, records=[]int})`
@@ -32,6 +33,7 @@ func TestParserHandler(t *testing.T) {
 		m["records"] = types.TypeD{Kind: "[]int"}
 		assert.Equal(t, *res, types.HandlerBodyParams{
 			Name:         "pkg.config.UserSearchReq",
+			Value:        t2,
 			RelatedNames: map[string]bool{"pkg.config.UserSearchReq": true, "[]string": true, "[]int": true}})
 	})
 
@@ -42,9 +44,11 @@ func TestParserHandler(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, *handler.Req, types.HandlerBodyParams{
 			Name:         "pkg.config.UserSearchReq",
+			Value:        "(pkg.config.UserSearchReq)",
 			RelatedNames: map[string]bool{"pkg.config.UserSearchReq": true}})
 		assert.Equal(t, *handler.Res, types.HandlerBodyParams{
 			Name:         "pkg.config.UserInfoReply",
+			Value:        "(pkg.config.UserInfoReply)",
 			RelatedNames: map[string]bool{"pkg.config.UserInfoReply": true}})
 		handler.Req = nil
 		handler.Res = nil
@@ -56,6 +60,7 @@ func TestParserHandler(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, *handler2.Res, types.HandlerBodyParams{
 			Name:         "pkg.config.UserInfoReply",
+			Value:        "(pkg.config.UserInfoReply)",
 			RelatedNames: map[string]bool{"pkg.config.UserInfoReply": true}})
 		handler2.Res = nil
 		assert.Equal(t, handler2, types.HttpHandler{Endpoint: "/api/user/search", Method: "get"})
@@ -110,6 +115,7 @@ func TestParserHandler(t *testing.T) {
 		assert.Equal(t, len(res), 1)
 		assert.Equal(t, res[0].Name, "register")
 		assert.Equal(t, res[0].Method, "post")
+		assert.Equal(t, res[0].Resource, "user")
 		assert.Equal(t, res[0].Endpoint, "/api/user/register")
 	})
 }
@@ -119,15 +125,15 @@ func TestExtractNestedReplacedStruct(t *testing.T) {
 	t2 := `pkg.config.UserSearchReq{list=[]string , records=[]int}`
 	t3 := `pkg.config.UserSearchReq{list=[]string , records=[]int , pager=Paged{count=int}}`
 
-	name, m := extractNestedReplacedStruct(t1)
+	name, m := ExtractNestedReplacedStruct(t1)
 	assert.Equal(t, name, "pkg.config.UserSearchReq")
 	assert.Nil(t, m)
 
-	name, m = extractNestedReplacedStruct(t2)
+	name, m = ExtractNestedReplacedStruct(t2)
 	assert.Equal(t, name, "pkg.config.UserSearchReq")
 	assert.Equal(t, m, map[string]string{"list": "[]string", "records": "[]int"})
 
-	name, m = extractNestedReplacedStruct(t3)
+	name, m = ExtractNestedReplacedStruct(t3)
 	assert.Equal(t, name, "pkg.config.UserSearchReq")
 	assert.Equal(t, m, map[string]string{"list": "[]string", "records": "[]int", "pager": "Paged{count=int"})
 

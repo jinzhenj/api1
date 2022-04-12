@@ -88,6 +88,29 @@ func extractBracesBlock(log logr.Logger, r io.Reader, pattern *regexp.Regexp) ([
 	return ret, nil
 }
 
+func extractHanderDefBlocks(s string) []string {
+	ret := make([]string, 0)
+	current := make([]string, 0)
+	for _, line := range strings.Split(strings.Trim(s, " {}\n\t"), "\n") {
+		if strings.Trim(line, " \t") == "" {
+			if len(current) != 0 {
+				ret = append(ret, strings.Join(current, "\n"))
+				current = make([]string, 0)
+			}
+		} else {
+			current = append(current, line)
+		}
+	}
+
+	if len(current) != 0 {
+		block := strings.Join(current, "\n")
+		if strings.Contains(block, "@handler") {
+			ret = append(ret, block)
+		}
+	}
+	return ret
+}
+
 func isCommentLine(s string) bool {
 	return len(reIsComment.FindAllString(s, -1)) > 0
 }
