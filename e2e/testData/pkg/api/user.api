@@ -1,0 +1,19 @@
+
+
+  service user {
+
+  	@doc(
+  		summary: 注册
+  	)
+  	@handler register
+  	post /api/user/register (pkg.types.RegisterReq)
+
+  	@doc(
+  		summary: 登录
+  	)
+  	@handler login
+  	post /api/user/login (pkg.config.LoginReq)
+
+  }
+
+  
