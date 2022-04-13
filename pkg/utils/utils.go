@@ -2,6 +2,7 @@ package utils
 
 import (
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -59,4 +60,22 @@ func IsComposedByBuiltin(s string) bool {
 		return len(strs) == 2 && goBuiltinTypes[strs[0]] && goBuiltinTypes[strs[1]]
 	}
 	return false
+}
+
+func MayCreateDir(path string) error {
+	if path == "" || path == "." || path == "./" {
+		return nil
+	}
+
+	_, err := os.Stat(path)
+	if err == nil {
+		return nil
+	}
+	if os.IsNotExist(err) {
+		if err = os.MkdirAll(path, 0777); err != nil {
+			return err
+		}
+		return nil
+	}
+	return err
 }

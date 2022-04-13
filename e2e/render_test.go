@@ -2,7 +2,6 @@ package e2e
 
 import (
 	"encoding/json"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -10,9 +9,11 @@ import (
 	"github.com/go-swagger/pkg/render"
 )
 
+//TODO: check attribute
 func TestRenderApi(t *testing.T) {
-	err := os.Chdir("./testData")
-	assert.NoError(t, err)
+	setUp(t)
+	defer tearDown(t)
+
 	rObj := render.NewRenderSwagger(testLogger, "pkg/api", nil)
 
 	swgObj, err := rObj.BuildSwaggerEndpoint()
@@ -22,9 +23,11 @@ func TestRenderApi(t *testing.T) {
 	testLogger.V(6).Info("render_api", "json data", string(jsonData))
 }
 
+// TODO:check attribute
 func TestRenderEntity(t *testing.T) {
-	err := os.Chdir("./testData")
-	assert.NoError(t, err)
+	setUp(t)
+	defer tearDown(t)
+
 	rObj := render.NewRenderSwagger(testLogger, "pkg/api", nil)
 
 	swgObj, err := rObj.BuildSwaggerEntity()
@@ -32,4 +35,13 @@ func TestRenderEntity(t *testing.T) {
 
 	jsonData, _ := json.Marshal(&swgObj)
 	testLogger.V(6).Info("render_api", "json data", string(jsonData))
+}
+
+func TestRenderDoc(t *testing.T) {
+	setUp(t)
+	defer tearDown(t)
+
+	rObj := render.NewRenderSwagger(testLogger, "pkg/api", nil)
+	err := rObj.GenerateSwaggerJson("docs/swagger.json")
+	assert.NoError(t, err)
 }

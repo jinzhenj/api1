@@ -9,6 +9,7 @@ import (
 	"github.com/go-swagger/pkg/parser"
 )
 
+//TODO: check attribute
 func TestParserGoStructFile(t *testing.T) {
 	t.Run("parser_go_file", func(t *testing.T) {
 		pfObj := parser.NewParserStructFile(testLogger, "testData/pkg/types/common.go")

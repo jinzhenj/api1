@@ -9,6 +9,7 @@ import (
 	"github.com/go-swagger/pkg/parser"
 )
 
+//TODO: check attribute
 func TestParserApiFile(t *testing.T) {
 	t.Run("parser_api_file", func(t *testing.T) {
 		res, err := parser.ParsrApiDefFile(testLogger, "testData/pkg/api/user.api")

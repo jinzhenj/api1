@@ -5,15 +5,28 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/go-swagger/pkg/log"
 )
 
 var (
 	testLogger logr.Logger
+	currentDir string
 )
 
 func TestMain(m *testing.M) {
+	currentDir, _ = os.Getwd()
 	testLogger = log.Development(8)
 	os.Exit(m.Run())
+}
+
+func setUp(t *testing.T) {
+	err := os.Chdir("./testData")
+	assert.NoError(t, err)
+}
+
+func tearDown(t *testing.T) {
+	err := os.Chdir(currentDir)
+	assert.NoError(t, err)
 }

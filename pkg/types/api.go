@@ -10,7 +10,6 @@ import "strings"
 get /api/user/search (pkg.config.UserSearchReq) returns (pkg.config.UserInfoReply)
 
 */
-
 type HandlerDoc struct {
 	Summary     string
 	Description string

@@ -2,7 +2,6 @@ package render
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -13,27 +12,11 @@ import (
 	"github.com/go-swagger/pkg/utils"
 )
 
-var (
-	definitonPrefix      = "#/definitions"
-	ErrInvalidDefinition = errors.New("not allowed to define go struct in current dir")
-)
-
-type RenderSwagger struct {
-	log        logr.Logger
-	apiDir     string
-	typesDir   []string
-	structDefs []types.StructRecord
-
-	//
-	structDefsUsedInApi []types.StructRecord
-	isInitStructDefs    bool
-}
-
 func NewRenderSwagger(log logr.Logger, apiDir string, typesDir []string) *RenderSwagger {
 	return &RenderSwagger{log: log, apiDir: apiDir, typesDir: typesDir}
 }
 
-func (o RenderSwagger) BuildSwaggerEndpoint() (types.SwaggerEndpointStruct, error) {
+func (o RenderSwagger) BuildSwaggerEndpoint() (types.SwaggerEndpointsStruct, error) {
 	filter := func(fn string) bool {
 		return strings.HasSuffix(fn, ".api")
 	}
@@ -72,8 +55,8 @@ func (o RenderSwagger) buildStructDefs() ([]types.StructRecord, error) {
 	return o.structDefs, nil
 }
 
-func (o RenderSwagger) generateSwaggerEndpointHandler(httpHandlers []types.HttpHandler) (types.SwaggerEndpointStruct, error) {
-	ret := make(types.SwaggerEndpointStruct)
+func (o RenderSwagger) generateSwaggerEndpointHandler(httpHandlers []types.HttpHandler) (types.SwaggerEndpointsStruct, error) {
+	ret := make(types.SwaggerEndpointsStruct)
 
 	// build swagger: step0
 	// step1: collect struct definitions
@@ -174,12 +157,12 @@ func (o RenderSwagger) httpHandlerReq2SwaggerParameters(params *types.HandlerBod
 				if utils.IsGoBuiltinTypes(field.Kind.Kind) {
 					param.Type = mapGoTypesToSwagger(field.Kind.Kind)
 				} else {
-					fmt.Printf("struct:(%s) not supported query parameters, kind: %s\n", structDef.Name, field.Kind.Kind)
+					o.log.Info("not supported query params", "struct def", structDef.Name, "kind", field.Kind.GetKind())
 				}
 			} else if field.Tag.Position == string(types.ParamPathPositionKind) {
 				param.Type = mapGoTypesToSwagger(field.Kind.Kind)
 			} else {
-				fmt.Printf("struct:(%s) not supported query parameters, kind: %s\n", structDef.Name, field.Kind.Kind)
+				o.log.Info("not supported query params", "struct def", structDef.Name, "kind", field.Kind.GetKind())
 			}
 			ret = append(ret, param)
 		}

@@ -2,7 +2,19 @@ package types
 
 import "encoding/json"
 
-type SwaggerEndpointStruct map[string]SwaggerSingleResourceApi
+//TODO: add more details
+type SwaggerInfo struct {
+}
+type SwaggerDoc struct {
+	Swagger     string                 `json:"swagger,omitempty"`
+	Info        SwaggerInfo            `json:"info,omitempty"`
+	Paths       SwaggerEndpointsStruct `json:"paths,omitempty"`
+	Definitions SwaggerEntitiesStruct  `json:"definitions,omitempty"`
+}
+
+type SwaggerEntitiesStruct map[string]SwaggerObjectDef
+
+type SwaggerEndpointsStruct map[string]SwaggerSingleResourceApi
 
 type SwaggerSingleResourceApi map[string]SwaggerEndpointHandler
 

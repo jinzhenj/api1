@@ -11,43 +11,12 @@ const (
 	disabledToRenderJsonTag = "-"
 )
 
-var example = `
-"api.Response": {
-	"type": "object",
-	"properties": {
-		"code": {
-			"type": "integer"
-		},
-		"data": {}, --// sik
-		"msg": {
-			"type": "string"
-		},
-		"media_type": {
-			"description": "文件类型",
-			"$ref": "#/definitions/model.MediaType"
-		}
-	}
-},
-"model.BatchRequest": {
-	"type": "object",
-	"properties": {
-		"ids": {
-			"type": "array",
-			"items": {
-				"type": "integer"
-			}
-		}
-	}
-},
-
-`
-
-func (o RenderSwagger) BuildSwaggerEntity() (map[string]types.SwaggerObjectDef, error) {
+func (o RenderSwagger) BuildSwaggerEntity() (types.SwaggerEntitiesStruct, error) {
 	defs, err := o.buildStructDefs()
 	if err != nil {
 		return nil, err
 	}
-	ret := make(map[string]types.SwaggerObjectDef)
+	ret := make(types.SwaggerEntitiesStruct)
 
 	for _, def := range defs {
 		entity, err := o.buildEntity(def)
