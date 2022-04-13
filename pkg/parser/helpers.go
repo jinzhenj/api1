@@ -2,6 +2,7 @@ package parser
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"regexp"
@@ -9,6 +10,8 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/go-swagger/pkg/types"
+
+	"github.com/go-swagger/pkg/utils"
 )
 
 var (
@@ -125,4 +128,35 @@ func usingWhiteSpace(s string) string {
 
 func trimSpace(s string) string {
 	return strings.Trim(s, " ")
+}
+
+func mayAddPathToStructKind(modulePrefixName, s string) string {
+
+	proc := func(name string) string {
+		if strings.Contains(name, ".") {
+			return "pkg" + "." + name
+		} else {
+			return modulePrefixName + "." + name
+		}
+	}
+
+	if utils.IsGoBuiltinTypes(s) {
+		return s
+	} else {
+		if strings.HasPrefix(s, "[]") {
+			ns := strings.Trim(s, "[]")
+			if utils.IsGoBuiltinTypes(ns) {
+				return s
+			} else {
+				return "[]" + proc(ns)
+			}
+		}
+		if strings.HasPrefix(s, "map[") {
+			fmt.Printf("not supported kind when add path to struct:(%s)", s)
+			return s
+		}
+
+		return proc(s)
+	}
+
 }

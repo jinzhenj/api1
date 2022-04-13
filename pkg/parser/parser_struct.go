@@ -3,6 +3,7 @@ package parser
 import (
 	"bytes"
 	"io/ioutil"
+	"path/filepath"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -10,6 +11,16 @@ import (
 	"github.com/go-swagger/pkg/types"
 	"github.com/go-swagger/pkg/utils"
 )
+
+type ParserStructFile struct {
+	log              logr.Logger
+	FileName         string
+	ModulePrefixName string
+}
+
+func NewParserStructFile(log logr.Logger, FileName string) *ParserStructFile {
+	return &ParserStructFile{log: log, FileName: FileName, ModulePrefixName: strings.ReplaceAll(filepath.Dir(FileName), "/", ".")}
+}
 
 func ParserStructFromDirs(log logr.Logger, dirs []string) ([]types.StructRecord, error) {
 	fliter := func(fn string) bool {
@@ -28,7 +39,8 @@ func ParserStructFromDirs(log logr.Logger, dirs []string) ([]types.StructRecord,
 
 	ret := make([]types.StructRecord, 0)
 	for _, fileName := range files {
-		records, err := ParserStructFromFile(log, fileName)
+		pFileObj := ParserStructFile{log: log, FileName: fileName, ModulePrefixName: strings.ReplaceAll(filepath.Dir(fileName), "/", ".")}
+		records, err := pFileObj.ParserStructFromFile()
 		if err != nil {
 			return nil, err
 		}
@@ -38,24 +50,24 @@ func ParserStructFromDirs(log logr.Logger, dirs []string) ([]types.StructRecord,
 	return ret, nil
 }
 
-func ParserStructFromFile(log logr.Logger, fileName string) ([]types.StructRecord, error) {
-	byteData, err := ioutil.ReadFile(fileName)
+func (o ParserStructFile) ParserStructFromFile() ([]types.StructRecord, error) {
+	byteData, err := ioutil.ReadFile(o.FileName)
 	if err != nil {
 		return nil, err
 	}
 
-	mayHandlerStrContent, err := extractBracesBlock(log, bytes.NewReader([]byte(byteData)), reStructPrefix)
+	mayHandlerStrContent, err := extractBracesBlock(o.log, bytes.NewReader([]byte(byteData)), reStructPrefix)
 	if err != nil {
-		log.Error(err, "failed to parse go struct when extract block", "content", byteData)
+		o.log.Error(err, "failed to parse go struct when extract block", "content", byteData)
 		return nil, err
 	}
-	log.V(6).Info("parser_struct", "found blocks", mayHandlerStrContent)
+	o.log.V(6).Info("parser_struct", "found blocks", mayHandlerStrContent)
 
 	ret := make([]types.StructRecord, 0)
 	for _, content := range mayHandlerStrContent {
-		record := ParseStruct(content)
+		record := o.ParseStruct(content)
 		if record != nil {
-			record.SInfo = types.SourceInfo{FileName: fileName}
+			record.SInfo = types.SourceInfo{FileName: o.FileName}
 			ret = append(ret, *record)
 		}
 	}
@@ -63,12 +75,13 @@ func ParserStructFromFile(log logr.Logger, fileName string) ([]types.StructRecor
 }
 
 // real work function
-func ParseStruct(s string) *types.StructRecord {
+func (o ParserStructFile) ParseStruct(s string) *types.StructRecord {
 	var ret types.StructRecord
 	fields := make([]types.Field, 0)
 	contents := strings.Split(s, "\n")
 
 	ret.Name = reToken.FindAllString(contents[0], -1)[1]
+	ret.RelativePathName = o.ModulePrefixName + "." + ret.Name
 
 	comments := make([]string, 0)
 	for _, line := range contents[1:] {
@@ -82,7 +95,7 @@ func ParseStruct(s string) *types.StructRecord {
 			}
 		} else {
 			field := types.Field{Comments: strings.Join(comments, "\n")}
-			parserField(line, &field)
+			o.parserField(line, &field)
 			fields = append(fields, field)
 			comments = make([]string, 0)
 		}
@@ -92,15 +105,15 @@ func ParseStruct(s string) *types.StructRecord {
 }
 
 // underlayer functions
-func parserField(s string, field *types.Field) {
+func (o ParserStructFile) parserField(s string, field *types.Field) {
 	ns := strings.TrimLeft(usingWhiteSpace(s), " ")
 	strs := reHandlerToken.FindAllString(ns, -1)
 	field.Name = strs[0]
-	field.Kind = types.TypeD{Kind: strs[1]}
+	field.Kind = types.TypeD{Kind: mayAddPathToStructKind(o.ModulePrefixName, strs[1])}
 
 	tagContent := reTag.FindString(s)
 	if len(tagContent) > 0 {
-		field.Tag = parserTag(tagContent)
+		field.Tag = o.parserTag(tagContent)
 		if field.Tag.Json == "" {
 			field.Tag.Json = field.Name
 		}
@@ -110,7 +123,7 @@ func parserField(s string, field *types.Field) {
 }
 
 //TODO: use regexp
-func parserTag(s string) *types.Tag {
+func (o ParserStructFile) parserTag(s string) *types.Tag {
 	var ret types.Tag
 	for _, str := range strings.Split(strings.Trim(s, "`"), " ") {
 		str := strings.Trim(str, " ")

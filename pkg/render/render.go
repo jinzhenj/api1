@@ -18,50 +18,60 @@ var (
 	ErrInvalidDefinition = errors.New("not allowed to define go struct in current dir")
 )
 
-func BuildSwaggerFile(log logr.Logger, dir string) (types.SwaggerEndpointStruct, error) {
+type RenderSwagger struct {
+	log      logr.Logger
+	apiDir   string
+	typesDir []string
+}
+
+func NewRenderSwagger(log logr.Logger, apiDir string, typesDir []string) *RenderSwagger {
+	return &RenderSwagger{log: log, apiDir: apiDir, typesDir: typesDir}
+}
+
+func (o RenderSwagger) BuildSwaggerEndpointFile() (types.SwaggerEndpointStruct, error) {
 	filter := func(fn string) bool {
 		return strings.HasSuffix(fn, ".api")
 	}
 
-	log.V(6).Info("scan dirs", "dir", dir)
-	files, err := utils.ListFiles(dir, filter)
+	o.log.V(6).Info("scan dirs", "dir", o.apiDir)
+	files, err := utils.ListFiles(o.apiDir, filter)
 	if err != nil {
-		log.Error(err, "failed to list files", "dir", dir)
+		o.log.Error(err, "failed to list files", "dir", o.apiDir)
 		return nil, err
 	}
-	log.V(6).Info("build swagger file", "dir", dir, "found api definition files", files)
+	o.log.V(6).Info("build swagger file", "dir", o.apiDir, "found api definition files", files)
 
 	// parse api definions from file
 	httpHandlers := make([]types.HttpHandler, 0)
 
 	for _, fn := range files {
-		tmp, err := parser.ParsrApiDefFile(log, fn)
+		tmp, err := parser.ParsrApiDefFile(o.log, fn)
 		if err != nil {
-			log.Error(err, "failed to parser api def file", "fileName", fn)
+			o.log.Error(err, "failed to parser api def file", "fileName", fn)
 			return nil, err
 		}
 		httpHandlers = append(httpHandlers, tmp...)
 	}
-	return generateSwaggerEndpointHandler(log, httpHandlers)
+	return o.generateSwaggerEndpointHandler(httpHandlers)
 }
 
 // underlay functions
-func generateSwaggerEndpointHandler(log logr.Logger, httpHandlers []types.HttpHandler) (types.SwaggerEndpointStruct, error) {
+func (o RenderSwagger) generateSwaggerEndpointHandler(httpHandlers []types.HttpHandler) (types.SwaggerEndpointStruct, error) {
 	ret := make(types.SwaggerEndpointStruct)
 
 	// build swagger: step0
 	// step1: collect struct definitions
-	structDefs, err := parser.ParserStructFromDirs(log, []string{"pkg/"})
+	structDefs, err := parser.ParserStructFromDirs(o.log, []string{"pkg/"})
 	if err != nil {
 		return nil, err
 	}
-	log.V(6).Info("generate swagger handler", "structDefs", structDefs)
+	o.log.V(6).Info("generate swagger handler", "structDefs", structDefs)
 
 	// step2: prepare
 	httpHandlerIdxMap := make(map[string][]int, 0)
 	swaggerHandlers := make([]types.SwaggerEndpointHandler, len(httpHandlers))
 	for i, handler := range httpHandlers {
-		swgHandlers, err := httpHandler2SwaggerEndpointHandler(&handler, structDefs)
+		swgHandlers, err := o.httpHandler2SwaggerEndpointHandler(&handler, structDefs)
 		if err != nil {
 			return nil, err
 		}
@@ -88,7 +98,7 @@ func generateSwaggerEndpointHandler(log logr.Logger, httpHandlers []types.HttpHa
 	return ret, nil
 }
 
-func httpHandler2SwaggerEndpointHandler(handler *types.HttpHandler, structDefs []types.StructRecord) (*types.SwaggerEndpointHandler, error) {
+func (o RenderSwagger) httpHandler2SwaggerEndpointHandler(handler *types.HttpHandler, structDefs []types.StructRecord) (*types.SwaggerEndpointHandler, error) {
 	ret := types.SwaggerEndpointHandler{
 		Produces: []string{"application/json"},
 		Tags:     []string{handler.Resource},
@@ -102,10 +112,10 @@ func httpHandler2SwaggerEndpointHandler(handler *types.HttpHandler, structDefs [
 	}
 
 	// parameters
-	ret.Parameters = httpHandlerReq2SwaggerParameters(handler.Req, structDefs)
+	ret.Parameters = o.httpHandlerReq2SwaggerParameters(handler.Req, structDefs)
 
 	// response
-	resp, err := httpHandler2ResSwaggerResponse(handler.Res, structDefs)
+	resp, err := o.httpHandler2ResSwaggerResponse(handler.Res, structDefs)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +124,7 @@ func httpHandler2SwaggerEndpointHandler(handler *types.HttpHandler, structDefs [
 	return &ret, nil
 }
 
-func httpHandlerReq2SwaggerParameters(params *types.HandlerBodyParams, structDefs []types.StructRecord) []types.SwaggerParameters {
+func (o RenderSwagger) httpHandlerReq2SwaggerParameters(params *types.HandlerBodyParams, structDefs []types.StructRecord) []types.SwaggerParameters {
 	if params == nil {
 		return nil
 	}
@@ -163,7 +173,7 @@ func httpHandlerReq2SwaggerParameters(params *types.HandlerBodyParams, structDef
 }
 
 // currently, only status code 200 repsonse
-func httpHandler2ResSwaggerResponse(params *types.HandlerBodyParams, structDefs []types.StructRecord) (map[string]types.SwaggerResponseSchema, error) {
+func (o RenderSwagger) httpHandler2ResSwaggerResponse(params *types.HandlerBodyParams, structDefs []types.StructRecord) (map[string]types.SwaggerResponseSchema, error) {
 	if params == nil {
 		return nil, nil
 	}
@@ -196,7 +206,9 @@ func marshalHttpResponse(param string) (json.RawMessage, error) {
 		obj, m := parser.ExtractNestedReplacedStruct(param)
 		if strings.HasPrefix(obj, "[]") {
 			if m == nil {
-				tmp := types.SwaggerItemDef{Type: "array", Items: types.EmbedSwaggerItemDef{Type: strings.Trim(obj, "[]")}}
+				tmp := types.SwaggerItemDef{
+					Type:  "array",
+					Items: types.EmbedSwaggerItemDef{Ref: fmt.Sprintf("%s/%s", definitonPrefix, strings.Trim(obj, "[]"))}}
 				return json.Marshal(&tmp)
 
 			} else {

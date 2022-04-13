@@ -42,7 +42,8 @@ type Field struct {
 }
 
 type StructRecord struct {
-	Name   string
-	Fields []Field
-	SInfo  SourceInfo
+	Name             string
+	RelativePathName string
+	Fields           []Field
+	SInfo            SourceInfo
 }
