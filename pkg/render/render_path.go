@@ -8,6 +8,7 @@ import (
 	"github.com/go-logr/logr"
 
 	"github.com/go-swagger/pkg/parser"
+	"github.com/go-swagger/pkg/tools"
 	"github.com/go-swagger/pkg/types"
 	"github.com/go-swagger/pkg/utils"
 )
@@ -20,25 +21,9 @@ func (o RenderSwagger) BuildSwaggerEndpoint() (types.SwaggerEndpointsStruct, err
 	filter := func(fn string) bool {
 		return strings.HasSuffix(fn, ".api")
 	}
-
-	o.log.V(6).Info("scan dirs", "dir", o.apiDir)
-	files, err := utils.ListFiles(o.apiDir, filter)
+	httpHandlers, err := tools.ListHttpHandlers(o.log, o.apiDir, filter)
 	if err != nil {
-		o.log.Error(err, "failed to list files", "dir", o.apiDir)
 		return nil, err
-	}
-	o.log.V(6).Info("build swagger file", "dir", o.apiDir, "found api definition files", files)
-
-	// parse api definions from file
-	httpHandlers := make([]types.HttpHandler, 0)
-
-	for _, fn := range files {
-		tmp, err := parser.ParsrApiDefFile(o.log, fn)
-		if err != nil {
-			o.log.Error(err, "failed to parser api def file", "fileName", fn)
-			return nil, err
-		}
-		httpHandlers = append(httpHandlers, tmp...)
 	}
 	return o.generateSwaggerEndpointHandler(httpHandlers)
 }

@@ -30,6 +30,7 @@ var (
 	reHandlerToken           = regexp.MustCompile(`[^\s\t]+`)
 	reBracesContent          = regexp.MustCompile(`{.*}`)
 	reMultiLineBracesContent = regexp.MustCompile(`(?sm){.*}`)
+	reFoundModule            = regexp.MustCompile(`module\s+.*`)
 
 	ErrMultiHandlerFound     = errors.New("multi handler def found")
 	ErrInvalidHttpHandlerDef = errors.New("invalid http handler def")

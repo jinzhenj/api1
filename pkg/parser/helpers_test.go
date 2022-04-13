@@ -147,6 +147,25 @@ func TestRegs(t *testing.T) {
 		assert.True(t, len(s) == 1)
 		assert.Equal(t, s[0], "{test1}")
 	})
+
+	t.Run("found_go_module", func(t *testing.T) {
+		t1 := `
+
+		module github.com/go-swagger
+
+		go 1.17
+		
+		require (
+			github.com/go-logr/logr v1.2.2
+			github.com/go-logr/zapr v1.2.3
+			github.com/stretchr/testify v1.7.1
+			go.uber.org/zap v1.19.0
+		)
+		`
+		s := reFoundModule.FindAllString(t1, 1)
+		assert.True(t, len(s) == 1)
+		assert.Equal(t, s[0], "module github.com/go-swagger")
+	})
 }
 
 func TestIsComment(t *testing.T) {
