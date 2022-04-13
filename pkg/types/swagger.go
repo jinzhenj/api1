@@ -39,8 +39,10 @@ type SwaggerObjectDef struct {
 }
 
 type SwaggerItemDef struct {
-	Type  string              `json:"type,omitempty"`
-	Items EmbedSwaggerItemDef `json:"items,omitempty"`
+	Type        string               `json:"type,omitempty"`
+	Description string               `json:"description,omitempty"`
+	Ref         string               `json:"ref,omitempty"`
+	Items       *EmbedSwaggerItemDef `json:"items,omitempty"`
 }
 
 type EmbedSwaggerItemDef struct {

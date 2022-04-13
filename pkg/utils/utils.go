@@ -10,7 +10,9 @@ var (
 	goBuiltinTypes = map[string]bool{"int": true, "int32": true, "int64": true,
 		"float": true, "float32": true, "float64": true,
 		"uint": true, "uint32": true, "uint64": true,
-		"string": true, "bool": true}
+		"string": true, "bool": true,
+		"interface{}": true,
+	}
 )
 
 func ListFiles(dir string, filter func(string) bool) ([]string, error) {
@@ -39,6 +41,10 @@ func ListFiles(dir string, filter func(string) bool) ([]string, error) {
 
 func IsGoBuiltinTypes(s string) bool {
 	return goBuiltinTypes[s]
+}
+
+func IsInterface(s string) bool {
+	return s == "interface{}"
 }
 
 func IsComposedByBuiltin(s string) bool {

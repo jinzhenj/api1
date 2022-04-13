@@ -18,6 +18,10 @@ type TypeD struct {
 	Kind string
 }
 
+func (o *TypeD) IsSupported() bool {
+	return !o.IsMap()
+}
+
 func (o *TypeD) IsArray() bool {
 	return strings.HasPrefix(o.Kind, "[]")
 }

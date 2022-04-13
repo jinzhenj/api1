@@ -19,16 +19,21 @@ var (
 )
 
 type RenderSwagger struct {
-	log      logr.Logger
-	apiDir   string
-	typesDir []string
+	log        logr.Logger
+	apiDir     string
+	typesDir   []string
+	structDefs []types.StructRecord
+
+	//
+	structDefsUsedInApi []types.StructRecord
+	isInitStructDefs    bool
 }
 
 func NewRenderSwagger(log logr.Logger, apiDir string, typesDir []string) *RenderSwagger {
 	return &RenderSwagger{log: log, apiDir: apiDir, typesDir: typesDir}
 }
 
-func (o RenderSwagger) BuildSwaggerEndpointFile() (types.SwaggerEndpointStruct, error) {
+func (o RenderSwagger) BuildSwaggerEndpoint() (types.SwaggerEndpointStruct, error) {
 	filter := func(fn string) bool {
 		return strings.HasSuffix(fn, ".api")
 	}
@@ -56,12 +61,23 @@ func (o RenderSwagger) BuildSwaggerEndpointFile() (types.SwaggerEndpointStruct, 
 }
 
 // underlay functions
+func (o RenderSwagger) buildStructDefs() ([]types.StructRecord, error) {
+	if !o.isInitStructDefs {
+		structDefs, err := parser.ParserStructFromDirs(o.log, []string{"pkg/"})
+		if err != nil {
+			return nil, err
+		}
+		o.structDefs = structDefs
+	}
+	return o.structDefs, nil
+}
+
 func (o RenderSwagger) generateSwaggerEndpointHandler(httpHandlers []types.HttpHandler) (types.SwaggerEndpointStruct, error) {
 	ret := make(types.SwaggerEndpointStruct)
 
 	// build swagger: step0
 	// step1: collect struct definitions
-	structDefs, err := parser.ParserStructFromDirs(o.log, []string{"pkg/"})
+	structDefs, err := o.buildStructDefs()
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +208,7 @@ func (o RenderSwagger) httpHandler2ResSwaggerResponse(params *types.HandlerBodyP
 func marshalHttpResponse(param string) (json.RawMessage, error) {
 	if utils.IsGoBuiltinTypes(param) {
 		if strings.HasPrefix(param, "[]") {
-			tmp := types.SwaggerItemDef{Type: "array", Items: types.EmbedSwaggerItemDef{Type: mapGoTypesToSwagger(strings.Trim(param, "[]"))}}
+			tmp := types.SwaggerItemDef{Type: "array", Items: &types.EmbedSwaggerItemDef{Type: mapGoTypesToSwagger(strings.Trim(param, "[]"))}}
 			data, _ := json.Marshal(&tmp)
 			return data, nil
 		} else {
@@ -208,7 +224,7 @@ func marshalHttpResponse(param string) (json.RawMessage, error) {
 			if m == nil {
 				tmp := types.SwaggerItemDef{
 					Type:  "array",
-					Items: types.EmbedSwaggerItemDef{Ref: fmt.Sprintf("%s/%s", definitonPrefix, strings.Trim(obj, "[]"))}}
+					Items: &types.EmbedSwaggerItemDef{Ref: fmt.Sprintf("%s/%s", definitonPrefix, strings.Trim(obj, "[]"))}}
 				return json.Marshal(&tmp)
 
 			} else {
