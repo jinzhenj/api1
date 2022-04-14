@@ -125,7 +125,7 @@ func (o ParserStructFile) parserField(s string, field *types.Field) {
 //TODO: use regexp
 func (o ParserStructFile) parserTag(s string) *types.Tag {
 	var ret types.Tag
-	for _, str := range strings.Split(strings.Trim(s, "`"), " ") {
+	for _, str := range reHandlerToken.FindAllString(strings.Trim(s, "`"), -1) {
 		str := strings.Trim(str, " ")
 		if len(str) == 0 {
 			continue

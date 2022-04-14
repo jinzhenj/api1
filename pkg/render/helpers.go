@@ -17,6 +17,7 @@ func foundStructDef(name string, arr []types.StructRecord) *types.StructRecord {
 	return nil
 }
 
+//TODO: 和 utils 里面判断 goBuiltin 抽取出来集合一下
 func mapGoTypesToSwagger(kind string) string {
 	switch kind {
 	case "int", "int32", "int64":

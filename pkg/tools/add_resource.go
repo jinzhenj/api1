@@ -67,7 +67,23 @@ func (o UpdateApiInterface) update(resource string, arr []types.HttpHandler) err
 	// module related
 	modules := make([]string, 0)
 	modules = append(modules, ginModules...)
-	modules = append(modules, fmt.Sprintf("%s/pkg/svc", o.module))
+	modulesMap := make(map[string]bool)
+
+	modulesMap[fmt.Sprintf("%s/pkg/svc", o.module)] = true
+	for _, h := range arr {
+		if h.Req != nil {
+			modulesMap[fmt.Sprintf("%s/%s", o.module, filepath.Dir(strings.ReplaceAll(h.Req.Name, ".", "/")))] = true
+		}
+		if h.Res != nil {
+			ns := strings.Trim(h.Res.Name, "[]")
+			if !utils.IsGoBuiltinTypes(ns) {
+				modulesMap[fmt.Sprintf("%s/%s", o.module, filepath.Dir(strings.ReplaceAll(h.Res.Name, ".", "/")))] = true
+			}
+		}
+	}
+	for key := range modulesMap {
+		modules = append(modules, key)
+	}
 	res.ImportModuleList = modules
 
 	// router entry related
@@ -80,6 +96,13 @@ func (o UpdateApiInterface) update(resource string, arr []types.HttpHandler) err
 		}
 	}
 	res.Entries = entries
+
+	// register functions related
+	registerFunctions := make([]types.RouterRegisterFunc, len(arr))
+	for idx, h := range arr {
+		registerFunctions[idx] = types.RouterRegisterFunc{Name: h.Name, Res: h.Res, Req: h.Req}
+	}
+	res.RegisterFunctions = registerFunctions
 
 	// render file
 	if err := utils.MayCreateDir("pkg/router"); err != nil {

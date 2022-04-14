@@ -17,7 +17,7 @@ var (
 
 func TestMain(m *testing.M) {
 	currentDir, _ = os.Getwd()
-	testLogger = log.Development(8)
+	testLogger = log.Development(5)
 	os.Exit(m.Run())
 }
 

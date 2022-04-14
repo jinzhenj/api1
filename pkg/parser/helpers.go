@@ -14,6 +14,7 @@ import (
 	"github.com/go-swagger/pkg/utils"
 )
 
+// 正则表达式的名字不够好，不应该根据用途。而应该根据模式特点
 var (
 	reStructPrefix = regexp.MustCompile(`type\s+[a-zA-Z0-9]+\s+struct\s?{`)
 	reSvcDefPrefix = regexp.MustCompile(`service\s+[a-zA-Z0-9]+\s{`)
