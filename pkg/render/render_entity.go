@@ -2,9 +2,10 @@ package render
 
 import (
 	"fmt"
+	"path/filepath"
+	"strings"
 
 	"github.com/go-swagger/pkg/types"
-	"github.com/go-swagger/pkg/utils"
 )
 
 const (
@@ -39,7 +40,7 @@ func (o RenderSwagger) buildEntity(def types.StructRecord) (types.SwaggerObjectD
 			continue
 		}
 		if !field.Kind.IsSupported() {
-			o.log.Info("build entity, field kind is not supported", "kind", field.Kind.Kind)
+			o.log.Info("build entity, field kind is not supported", "kind", field.Kind.Val)
 			continue
 		}
 		var property types.SwaggerItemDef
@@ -48,21 +49,21 @@ func (o RenderSwagger) buildEntity(def types.StructRecord) (types.SwaggerObjectD
 			property = types.SwaggerItemDef{
 				Type: "array",
 			}
-			if utils.IsGoBuiltinTypes(field.Kind.GetKind()) {
-				if !utils.IsInterface(field.Kind.GetKind()) {
+			if field.Kind.IsBuiltin() {
+				if !types.IsInterface(field.Kind.GetKind()) {
 					property.Items = &types.EmbedSwaggerItemDef{Type: field.Kind.GetKind()}
 				}
 			} else {
 				//TODO: use functions
-				property.Items = &types.EmbedSwaggerItemDef{Ref: fmt.Sprintf("%s/%s", definitonPrefix, field.Kind.GetKind())}
+				property.Items = &types.EmbedSwaggerItemDef{Ref: getRef(&field.Kind)}
 			}
 		} else {
-			if utils.IsGoBuiltinTypes(field.Kind.GetKind()) {
-				if !utils.IsInterface(field.Kind.GetKind()) {
+			if field.Kind.IsBuiltin() {
+				if !types.IsInterface(field.Kind.GetKind()) {
 					property.Type = field.Kind.GetKind()
 				}
 			} else {
-				property.Ref = fmt.Sprintf("%s/%s", definitonPrefix, field.Kind.GetKind())
+				property.Ref = getRef(&field.Kind)
 			}
 		}
 		property.Description = field.Comments
@@ -71,4 +72,14 @@ func (o RenderSwagger) buildEntity(def types.StructRecord) (types.SwaggerObjectD
 
 	ret.Properties = propertiesM
 	return ret, nil
+}
+
+func getRef(f *types.TypeD) string {
+	if f.IsBuiltin() {
+		return f.GetKind()
+	} else {
+		ref := strings.Replace(filepath.Join(f.GetModule(), f.GetKind()), "/", ".", -1)
+		return fmt.Sprintf("%s/%s", definitonPrefix, ref)
+	}
+
 }

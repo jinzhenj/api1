@@ -109,7 +109,7 @@ func (o ParserStructFile) parserField(s string, field *types.Field) {
 	ns := strings.TrimLeft(usingWhiteSpace(s), " ")
 	strs := reHandlerToken.FindAllString(ns, -1)
 	field.Name = strs[0]
-	field.Kind = types.TypeD{Kind: mayAddPathToStructKind(o.ModulePrefixName, strs[1])}
+	field.Kind = types.TypeD{Val: mayAddPathToStructKind(o.ModulePrefixName, strs[1])}
 
 	tagContent := reTag.FindString(s)
 	if len(tagContent) > 0 {

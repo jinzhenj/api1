@@ -72,12 +72,13 @@ func (o UpdateApiInterface) update(resource string, arr []types.HttpHandler) err
 	modulesMap[fmt.Sprintf("%s/pkg/svc", o.module)] = true
 	for _, h := range arr {
 		if h.Req != nil {
-			modulesMap[fmt.Sprintf("%s/%s", o.module, filepath.Dir(strings.ReplaceAll(h.Req.Name, ".", "/")))] = true
+			if !h.Req.Kind.IsBuiltin() {
+				modulesMap[fmt.Sprintf("%s/%s", o.module, h.Req.Kind.GetModule())] = true
+			}
 		}
 		if h.Res != nil {
-			ns := strings.Trim(h.Res.Name, "[]")
-			if !utils.IsGoBuiltinTypes(ns) {
-				modulesMap[fmt.Sprintf("%s/%s", o.module, filepath.Dir(strings.ReplaceAll(h.Res.Name, ".", "/")))] = true
+			if !h.Res.Kind.IsBuiltin() {
+				modulesMap[fmt.Sprintf("%s/%s", o.module, h.Res.Kind.GetModule())] = true
 			}
 		}
 	}

@@ -8,31 +8,35 @@ import (
 )
 
 func TestParserHandler(t *testing.T) {
+	pfObj := ParserApiFile{log: testLogger, fileName: ""}
+
 	t.Run("parser_doc", func(t *testing.T) {
 		t1 := `
 		@doc(
 			summary: 获取用户信息
 		)`
-		res := parserDoc(testLogger, t1)
+		res := pfObj.parserDoc(t1)
 		assert.Equal(t, *res, types.HandlerDoc{Summary: "获取用户信息"})
 	})
 
 	t.Run("parser_handler_body_method", func(t *testing.T) {
 
 		t1 := `(pkg.config.UserSearchReq)`
-		res := parseHandlerBodyMethod(t1)
+		res := pfObj.parseHandlerBodyMethod(t1)
+		assert.Equal(t, *res.Kind, types.TypeD{Val: "pkg.config.UserSearchReq"})
+		res.Kind = nil
 		assert.Equal(t, *res, types.HandlerBodyParams{
-			Name:         "pkg.config.UserSearchReq",
 			Value:        t1,
 			RelatedNames: map[string]bool{"pkg.config.UserSearchReq": true}})
 
 		t2 := `(pkg.config.UserSearchReq{list=[]string, records=[]int})`
-		res = parseHandlerBodyMethod(t2)
+		res = pfObj.parseHandlerBodyMethod(t2)
 		m := make(map[string]types.TypeD)
-		m["list"] = types.TypeD{Kind: "[]string"}
-		m["records"] = types.TypeD{Kind: "[]int"}
+		m["list"] = types.TypeD{Val: "[]string"}
+		m["records"] = types.TypeD{Val: "[]int"}
+		assert.Equal(t, *res.Kind, types.TypeD{Val: "pkg.config.UserSearchReq"})
+		res.Kind = nil
 		assert.Equal(t, *res, types.HandlerBodyParams{
-			Name:         "pkg.config.UserSearchReq",
 			Value:        t2,
 			RelatedNames: map[string]bool{"pkg.config.UserSearchReq": true, "[]string": true, "[]int": true}})
 	})
@@ -40,14 +44,14 @@ func TestParserHandler(t *testing.T) {
 	t.Run("parser_handler_info", func(t *testing.T) {
 		t1 := ` get /api/user/search (pkg.config.UserSearchReq) return (pkg.config.UserInfoReply)  `
 		var handler types.HttpHandler
-		err := parseHanlderInfo(testLogger, t1, &handler)
+		err := pfObj.parseHanlderInfo(t1, &handler)
 		assert.NoError(t, err)
+		handler.Req.Kind = nil
+		handler.Res.Kind = nil
 		assert.Equal(t, *handler.Req, types.HandlerBodyParams{
-			Name:         "pkg.config.UserSearchReq",
 			Value:        "(pkg.config.UserSearchReq)",
 			RelatedNames: map[string]bool{"pkg.config.UserSearchReq": true}})
 		assert.Equal(t, *handler.Res, types.HandlerBodyParams{
-			Name:         "pkg.config.UserInfoReply",
 			Value:        "(pkg.config.UserInfoReply)",
 			RelatedNames: map[string]bool{"pkg.config.UserInfoReply": true}})
 		handler.Req = nil
@@ -56,10 +60,10 @@ func TestParserHandler(t *testing.T) {
 
 		t2 := ` get /api/user/search  return  (pkg.config.UserInfoReply)  `
 		var handler2 types.HttpHandler
-		err = parseHanlderInfo(testLogger, t2, &handler2)
+		err = pfObj.parseHanlderInfo(t2, &handler2)
 		assert.NoError(t, err)
+		handler2.Res.Kind = nil
 		assert.Equal(t, *handler2.Res, types.HandlerBodyParams{
-			Name:         "pkg.config.UserInfoReply",
 			Value:        "(pkg.config.UserInfoReply)",
 			RelatedNames: map[string]bool{"pkg.config.UserInfoReply": true}})
 		handler2.Res = nil
@@ -83,14 +87,14 @@ func TestParserHandler(t *testing.T) {
 		get /api/user/:id (pkg.config.UserInfoReq) return (pkg.config.UserInfoReply)
 		
 		`
-		res, err := parserHandler(testLogger, t1)
+		res, err := pfObj.parserHandler(t1)
 		assert.NoError(t, err)
 		assert.Equal(t, *res.Doc, types.HandlerDoc{Summary: "获取用户信息"})
 		assert.Equal(t, res.Name, "getUserInfo")
 		assert.Equal(t, res.Method, "get")
 		assert.Equal(t, res.Endpoint, "/api/user/:id")
 
-		res, err = parserHandler(testLogger, t2)
+		res, err = pfObj.parserHandler(t2)
 		assert.NoError(t, err)
 		assert.Nil(t, res.Doc)
 		assert.Equal(t, res.Name, "getUserInfo")
@@ -110,7 +114,7 @@ func TestParserHandler(t *testing.T) {
 	  
 		} sss
 		`
-		res, err := ParserApiDef(testLogger, t1)
+		res, err := pfObj.ParserApiDef(t1)
 		assert.NoError(t, err)
 		assert.Equal(t, len(res), 1)
 		assert.Equal(t, res[0].Name, "register")

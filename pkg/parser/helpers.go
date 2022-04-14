@@ -9,9 +9,8 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
-	"github.com/go-swagger/pkg/types"
 
-	"github.com/go-swagger/pkg/utils"
+	"github.com/go-swagger/pkg/types"
 )
 
 // 正则表达式的名字不够好，不应该根据用途。而应该根据模式特点
@@ -36,25 +35,6 @@ var (
 	ErrMultiHandlerFound     = errors.New("multi handler def found")
 	ErrInvalidHttpHandlerDef = errors.New("invalid http handler def")
 )
-
-// dir 相对路径
-func extractStruct(dir string) ([]types.StructRecord, error) {
-
-	ret := make([]types.StructRecord, 0)
-	files, err := ioutil.ReadDir(".")
-	if err != nil {
-		return nil, err
-	}
-	for _, f := range files {
-		if f.IsDir() {
-			continue
-		}
-		if strings.HasSuffix(f.Name(), ".go") {
-			// ret = append(ret, tret...)
-		}
-	}
-	return ret, nil
-}
 
 //从结构体抽取 struct 定义块
 //必须保证注释中不包含字符 "{" 或 "}"
@@ -142,12 +122,12 @@ func mayAddPathToStructKind(modulePrefixName, s string) string {
 		}
 	}
 
-	if utils.IsGoBuiltinTypes(s) {
+	if types.IsGoBuiltinTypes(s) {
 		return s
 	} else {
 		if strings.HasPrefix(s, "[]") {
 			ns := strings.Trim(s, "[]")
-			if utils.IsGoBuiltinTypes(ns) {
+			if types.IsGoBuiltinTypes(ns) {
 				return s
 			} else {
 				return "[]" + proc(ns)
@@ -161,4 +141,22 @@ func mayAddPathToStructKind(modulePrefixName, s string) string {
 		return proc(s)
 	}
 
+}
+
+func ExtractNestedReplacedStruct(s string) (string, map[string]string) {
+	idx := strings.Index(s, "{")
+	if idx == -1 {
+		return s, nil
+	}
+	m := make(map[string]string)
+	for _, line := range strings.Split(strings.Trim(s[idx+1:], "}"), ",") {
+		idxE := strings.Index(line, "=")
+		if idxE >= 0 {
+			key := trimSpace(line[:idxE])
+			val := trimSpace(line[idxE+1:])
+			m[key] = val
+		}
+	}
+
+	return trimSpace(s[:idx]), m
 }

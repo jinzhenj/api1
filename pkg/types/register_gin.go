@@ -2,9 +2,8 @@ package types
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
-
-	"github.com/go-swagger/pkg/utils"
 )
 
 type RegisterResource struct {
@@ -18,7 +17,7 @@ func (o RegisterResource) Render() string {
 	return o.RenderImportedModules() + `
 
 
-` + o.RenderRouterEntries() + o.RenderRouterRegisterFunctions()
+` + o.RenderRouterEntries() + "\n" + o.RenderRouterRegisterFunctions()
 }
 
 func (o RegisterResource) RenderImportedModules() string {
@@ -67,29 +66,30 @@ func (o RouterRegisterFunc) Render() string {
 
 	// declare request and response variable
 	if o.Req != nil {
-		m := strings.Split(o.Req.Name, ".")
-		l := len(m)
-		req := fmt.Sprintf(`    var req %s.%s`, m[l-2], m[l-1])
+		kind := o.Req.Kind.GetKind()
+		var req string
+		if o.Req.Kind.IsBuiltin() {
+			req = fmt.Sprintf(`    var req %s`, kind)
+		} else {
+			module := filepath.Base(o.Req.Kind.GetModule())
+			req = fmt.Sprintf(`    var req %s.%s`, module, kind)
+		}
 		content = append(content, req)
 	}
 	if o.Res != nil {
-		ns := strings.Trim(o.Res.Name, "[]")
-		m := strings.Split(ns, ".")
-		l := len(m)
 		var res string
-		if strings.HasPrefix(o.Res.Name, "[]") {
-			if utils.IsGoBuiltinTypes(ns) {
-				res = fmt.Sprintf(`    res := make(%s, 0)`, o.Res.Name)
-			} else {
-				res = fmt.Sprintf(`    res := make([]%s.%s, 0)`, m[l-2], m[l-1])
-			}
+		var composeKind string
+		if o.Res.Kind.IsBuiltin() {
+			composeKind = o.Res.Kind.GetKind()
 		} else {
-			if utils.IsGoBuiltinTypes(ns) {
-				res = fmt.Sprintf(`    var res %s`, o.Res.Name)
-			} else {
-				res = fmt.Sprintf(`    var res %s.%s`, m[l-2], m[l-1])
-			}
+			composeKind = filepath.Base(o.Res.Kind.GetModule()) + "." + o.Res.Kind.GetKind()
 		}
+		if o.Res.Kind.IsArray() {
+			res = fmt.Sprintf(`    res := make([]%s, 0)`, composeKind)
+		} else {
+			res = fmt.Sprintf(`    var res %s`, composeKind)
+		}
+
 		content = append(content, res)
 	}
 	// render functions
@@ -99,7 +99,6 @@ func (o RouterRegisterFunc) Render() string {
 		content = append(content, fmt.Sprintf(`    svc.%s(c *gin.Context, &req)`, strings.Title(o.Name)))
 	}
 
-	//TODO
 	content = append(content, "}")
 	return strings.Join(content, "\n")
 }

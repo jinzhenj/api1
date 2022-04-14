@@ -21,7 +21,8 @@ func ListHttpHandlers(log logr.Logger, dir string, filter func(string) bool) ([]
 	httpHandlers := make([]types.HttpHandler, 0)
 
 	for _, fn := range files {
-		tmp, err := parser.ParsrApiDefFile(log, fn)
+		pApiObj := parser.NewParserApiFile(log, fn)
+		tmp, err := pApiObj.ParsrApiDefFile()
 		if err != nil {
 			log.Error(err, "failed to parser api def file", "fileName", fn)
 			return nil, err

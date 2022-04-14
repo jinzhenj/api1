@@ -1,6 +1,15 @@
 package types
 
-import "strings"
+import (
+	"regexp"
+	"strings"
+
+	"github.com/fatih/color"
+)
+
+var (
+	reBrace = regexp.MustCompile(`{.*}`)
+)
 
 type SourceInfo struct {
 	FileName string
@@ -15,7 +24,7 @@ type Tag struct {
 }
 
 type TypeD struct {
-	Kind string
+	Val string
 }
 
 func (o *TypeD) IsSupported() bool {
@@ -23,19 +32,54 @@ func (o *TypeD) IsSupported() bool {
 }
 
 func (o *TypeD) IsArray() bool {
-	return strings.HasPrefix(o.Kind, "[]")
+	return strings.HasPrefix(o.Val, "[]")
 }
 
 func (o *TypeD) IsMap() bool {
-	return strings.HasPrefix(o.Kind, "map")
+	return strings.HasPrefix(o.Val, "map[")
 }
 
 func (o *TypeD) GetKind() string {
-	return strings.Trim(o.Kind, "[]")
+	if o.IsMap() {
+		color.Red("not supported kind:(%s)\n", o.Val)
+		return o.Val
+	}
+	if o.IsBuiltin() {
+		return o.Tidy()
+	}
+	strs := strings.Split(o.Tidy(), ".")
+	return strs[len(strs)-1]
+}
+
+func (o *TypeD) IsBuiltin() bool {
+	tidyS := o.Tidy()
+	return IsGoBuiltinTypes(tidyS)
+}
+
+func (o *TypeD) GetModule() string {
+	if o.IsBuiltin() {
+		return ""
+	}
+	strs := strings.Split(o.Tidy(), ".")
+	return strings.Join(strs[:len(strs)-1], "/")
+}
+
+// []int ==> [int]
+// map[string]bool ==> map[string]bool
+// []pkg.types.ListRecords{data=xxxx} ==> pkg.types.ListRecords
+func (o *TypeD) Tidy() string {
+	ns := o.Val
+	if o.IsArray() {
+		ns = strings.Trim(o.Val, "[]")
+	}
+	if strings.Contains(ns, "{") {
+		ns = reBrace.ReplaceAllString(ns, "")
+	}
+	return ns
 }
 
 func (o *TypeD) GetMapKind() []string {
-	return strings.Split(strings.Trim(o.Kind, "map["), "]")
+	return strings.Split(strings.Trim(o.Val, "map["), "]")
 }
 
 type Field struct {

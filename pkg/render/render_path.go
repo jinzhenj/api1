@@ -10,7 +10,6 @@ import (
 	"github.com/go-swagger/pkg/parser"
 	"github.com/go-swagger/pkg/tools"
 	"github.com/go-swagger/pkg/types"
-	"github.com/go-swagger/pkg/utils"
 )
 
 func NewRenderSwagger(log logr.Logger, apiDir string, typesDir []string) *RenderSwagger {
@@ -112,7 +111,8 @@ func (o RenderSwagger) httpHandlerReq2SwaggerParameters(params *types.HandlerBod
 	if params == nil {
 		return nil
 	}
-	structDef := foundStructDef(params.Name, structDefs)
+	//TODO: not expose val here
+	structDef := foundStructDef(params.Kind.Val, structDefs)
 	if structDef == nil {
 		return nil
 	}
@@ -129,23 +129,23 @@ func (o RenderSwagger) httpHandlerReq2SwaggerParameters(params *types.HandlerBod
 			// currently, neither array kind nor map kind parameter in http request
 			// TODO: using switch
 			if field.Tag.Position == string(types.ParamBodyPositionKind) {
-				if utils.IsGoBuiltinTypes(field.Kind.Kind) {
+				if field.Kind.IsBuiltin() {
 					param.Schema = &types.EmbedSwaggerItemDef{
-						Ref: mapGoTypesToSwagger(field.Kind.Kind),
+						Ref: mapGoTypesToSwagger(field.Kind.GetKind()),
 					}
 				} else {
 					param.Schema = &types.EmbedSwaggerItemDef{
-						Ref: fmt.Sprintf("%s/%s", definitonPrefix, field.Kind.Kind),
+						Ref: getRef(&field.Kind),
 					}
 				}
 			} else if field.Tag.Position == string(types.ParamQueryPositionKind) {
-				if utils.IsGoBuiltinTypes(field.Kind.Kind) {
-					param.Type = mapGoTypesToSwagger(field.Kind.Kind)
+				if field.Kind.IsBuiltin() {
+					param.Type = mapGoTypesToSwagger(field.Kind.GetKind())
 				} else {
 					o.log.Info("not supported query params", "struct def", structDef.Name, "kind", field.Kind.GetKind())
 				}
 			} else if field.Tag.Position == string(types.ParamPathPositionKind) {
-				param.Type = mapGoTypesToSwagger(field.Kind.Kind)
+				param.Type = mapGoTypesToSwagger(field.Kind.GetKind())
 			} else {
 				o.log.Info("not supported query params", "struct def", structDef.Name, "kind", field.Kind.GetKind())
 			}
@@ -174,7 +174,7 @@ func (o RenderSwagger) httpHandler2ResSwaggerResponse(params *types.HandlerBodyP
 
 //too complicated !!!
 func marshalHttpResponse(param string) (json.RawMessage, error) {
-	if utils.IsGoBuiltinTypes(param) {
+	if types.IsGoBuiltinTypes(param) {
 		if strings.HasPrefix(param, "[]") {
 			tmp := types.SwaggerItemDef{Type: "array", Items: &types.EmbedSwaggerItemDef{Type: mapGoTypesToSwagger(strings.Trim(param, "[]"))}}
 			data, _ := json.Marshal(&tmp)
@@ -184,30 +184,30 @@ func marshalHttpResponse(param string) (json.RawMessage, error) {
 			data, _ := json.Marshal(&tmp)
 			return data, nil
 		}
-	} else if utils.IsComposedByBuiltin(param) {
+	} else if types.IsComposedByBuiltin(param) {
 		return nil, fmt.Errorf("not supported response param:(%s) when build swagger response", param)
 	} else {
 		obj, m := parser.ExtractNestedReplacedStruct(param)
-		if strings.HasPrefix(obj, "[]") {
+		kind := types.TypeD{Val: obj}
+		if kind.IsArray() {
 			if m == nil {
 				tmp := types.SwaggerItemDef{
 					Type:  "array",
-					Items: &types.EmbedSwaggerItemDef{Ref: fmt.Sprintf("%s/%s", definitonPrefix, strings.Trim(obj, "[]"))}}
+					Items: &types.EmbedSwaggerItemDef{Ref: getRef(&kind)}}
 				return json.Marshal(&tmp)
-
 			} else {
 				return nil, fmt.Errorf("not supported now, when marshalHttpResponse, param: %s", param)
 			}
 		} else {
 			if m == nil {
-				tmp := types.SwaggerParameters{Schema: &types.EmbedSwaggerItemDef{Ref: fmt.Sprintf("%s/%s", definitonPrefix, obj)}}
+				tmp := types.SwaggerParameters{Schema: &types.EmbedSwaggerItemDef{Ref: getRef(&kind)}}
 				jsonData, _ := json.Marshal(&tmp)
 				return jsonData, nil
 			} else {
 				var allOf types.HelperSwaggerAllOf
 				arr := make([]json.RawMessage, 0)
 				// obj def
-				objDef := types.SwaggerObjectDef{Ref: fmt.Sprintf("%s/%s", definitonPrefix, obj)}
+				objDef := types.SwaggerObjectDef{Ref: getRef(&kind)}
 				jsonData, _ := json.Marshal(&objDef)
 				arr = append(arr, jsonData)
 				// properties related

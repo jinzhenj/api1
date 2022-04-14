@@ -1,7 +1,5 @@
 package types
 
-import "strings"
-
 /*
 @doc(
 	summary: "用户搜索"
@@ -16,17 +14,9 @@ type HandlerDoc struct {
 }
 
 type HandlerBodyParams struct {
-	Name         string
+	Kind         *TypeD
 	Value        string
 	RelatedNames map[string]bool
-}
-
-func (o *HandlerBodyParams) IsThisStruct(relativeFilePath, structName string) bool {
-	if relativeFilePath == "./" {
-		return o.Name == structName
-	}
-	return o.Name == strings.ReplaceAll(relativeFilePath, "/", ".")+structName
-
 }
 
 type HttpHandler struct {
@@ -37,8 +27,4 @@ type HttpHandler struct {
 	Doc      *HandlerDoc
 	Req      *HandlerBodyParams
 	Res      *HandlerBodyParams
-}
-
-func (o *HttpHandler) CapitalName() string {
-	return strings.Title(o.Name)
 }
