@@ -1,0 +1,74 @@
+package parser
+
+import (
+	"bytes"
+	"io/ioutil"
+	"path/filepath"
+	"strings"
+
+	"github.com/go-logr/logr"
+
+	"github.com/api1/pkg/utils"
+)
+
+type ParserStructFile struct {
+	log              logr.Logger
+	FileName         string
+	ModulePrefixName string
+}
+
+func NewParserStructFile(log logr.Logger, FileName string) *ParserStructFile {
+	return &ParserStructFile{log: log, FileName: FileName, ModulePrefixName: strings.ReplaceAll(filepath.Dir(FileName), "/", ".")}
+}
+
+func ParserStructFromDirs(log logr.Logger, dirs []string) ([]types.StructRecord, error) {
+	fliter := func(fn string) bool {
+		return strings.HasSuffix(fn, ".go")
+	}
+
+	files := make([]string, 0)
+
+	for _, dir := range dirs {
+		cfiles, err := utils.ListFiles(dir, fliter)
+		if err != nil {
+			return nil, err
+		}
+		files = append(files, cfiles...)
+	}
+
+	ret := make([]types.StructRecord, 0)
+	for _, fileName := range files {
+		pFileObj := ParserStructFile{log: log, FileName: fileName, ModulePrefixName: strings.ReplaceAll(filepath.Dir(fileName), "/", ".")}
+		records, err := pFileObj.ParserStructFromFile()
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, records...)
+	}
+
+	return ret, nil
+}
+
+func (o ParserStructFile) ParserStructFromFile() ([]types.StructRecord, error) {
+	byteData, err := ioutil.ReadFile(o.FileName)
+	if err != nil {
+		return nil, err
+	}
+
+	mayHandlerStrContent, err := extractBracesBlock(o.log, bytes.NewReader([]byte(byteData)), reStructPrefix)
+	if err != nil {
+		o.log.Error(err, "failed to parse go struct when extract block", "content", byteData)
+		return nil, err
+	}
+	o.log.V(6).Info("parser_struct", "found blocks", mayHandlerStrContent)
+
+	ret := make([]types.StructRecord, 0)
+	for _, content := range mayHandlerStrContent {
+		record := o.ParseStruct(content)
+		if record != nil {
+			record.SInfo = types.SourceInfo{FileName: o.FileName}
+			ret = append(ret, *record)
+		}
+	}
+	return ret, nil
+}

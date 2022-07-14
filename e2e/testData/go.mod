@@ -1,3 +1,3 @@
-module github.com/go-swagger/e2e/testData
+module github.com/api1/e2e/testData
 
 go 1.17

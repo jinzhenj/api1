@@ -1,0 +1,48 @@
+package parser
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestExtractNestedReplacedStruct(t *testing.T) {
+	t1 := `pkg.config.UserSearchReq`
+	t2 := `pkg.config.UserSearchReq{list=[]string , records=[]int}`
+	t3 := `pkg.config.UserSearchReq{list=[]string , records=[]int , pager=Paged{count=int}}`
+
+	name, m := ExtractNestedReplacedStruct(t1)
+	assert.Equal(t, name, "pkg.config.UserSearchReq")
+	assert.Nil(t, m)
+
+	name, m = ExtractNestedReplacedStruct(t2)
+	assert.Equal(t, name, "pkg.config.UserSearchReq")
+	assert.Equal(t, m, map[string]string{"list": "[]string", "records": "[]int"})
+
+	name, m = ExtractNestedReplacedStruct(t3)
+	assert.Equal(t, name, "pkg.config.UserSearchReq")
+	assert.Equal(t, m, map[string]string{"list": "[]string", "records": "[]int", "pager": "Paged{count=int"})
+
+}
+
+func TestRegs(t *testing.T) {
+
+	t.Run("found_go_module", func(t *testing.T) {
+		t1 := `
+
+		module github.com/api1
+
+		go 1.17
+		
+		require (
+			github.com/go-logr/logr v1.2.2
+			github.com/go-logr/zapr v1.2.3
+			github.com/stretchr/testify v1.7.1
+			go.uber.org/zap v1.19.0
+		)
+		`
+		s := reFoundModule.FindAllString(t1, 1)
+		assert.True(t, len(s) == 1)
+		assert.Equal(t, s[0], "module github.com/api1")
+	})
+}

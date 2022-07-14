@@ -1,0 +1,34 @@
+group user
+
+enum Role {
+	ADMIN
+	USER
+}
+
+struct User {
+	id: int
+	name: string
+	role: Role
+	address: string?
+}
+
+struct UserRegisterRequest {
+	id: int
+}
+
+struct UserLoginRequest {
+	id: int
+}
+
+interface UserController {
+	# @summary 注册
+	# @route post /api/user/register
+	register(req: UserRegisterRequest)
+
+	# @summary 登录
+	# @route post /api/user/login
+	login(req: UserLoginRequest)
+
+	# this is not route
+	someFunc()
+}

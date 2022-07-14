@@ -1,0 +1,79 @@
+package render
+
+import (
+	"encoding/json"
+	"fmt"
+	"strings"
+
+	"github.com/api1/pkg/parser"
+)
+
+func (o RenderSwagger) buildStructDefs() ([]types.StructRecord, error) {
+	if !o.isInitStructDefs {
+		structDefs, err := parser.ParserStructFromDirs(o.log, []string{"pkg/"})
+		if err != nil {
+			return nil, err
+		}
+		o.structDefs = structDefs
+	}
+	return o.structDefs, nil
+}
+
+//too complicated !!!
+func marshalHttpResponse(param string) (json.RawMessage, error) {
+	if types.IsGoBuiltinTypes(param) {
+		if strings.HasPrefix(param, "[]") {
+			tmp := types.SwaggerItemDef{Type: "array", Items: &types.EmbedSwaggerItemDef{Type: mapGoTypesToSwagger(strings.Trim(param, "[]"))}}
+			data, _ := json.Marshal(&tmp)
+			return data, nil
+		} else {
+			tmp := types.EmbedSwaggerItemDef{Type: mapGoTypesToSwagger(param)}
+			data, _ := json.Marshal(&tmp)
+			return data, nil
+		}
+	} else if types.IsComposedByBuiltin(param) {
+		return nil, fmt.Errorf("not supported response param:(%s) when build swagger response", param)
+	} else {
+		obj, m := parser.ExtractNestedReplacedStruct(param)
+		kind := types.TypeD{Val: obj}
+		if kind.IsArray() {
+			if m == nil {
+				tmp := types.SwaggerItemDef{
+					Type:  "array",
+					Items: &types.EmbedSwaggerItemDef{Ref: getRef(&kind)}}
+				return json.Marshal(&tmp)
+			} else {
+				return nil, fmt.Errorf("not supported now, when marshalHttpResponse, param: %s", param)
+			}
+		} else {
+			if m == nil {
+				tmp := types.SwaggerParameters{Schema: &types.EmbedSwaggerItemDef{Ref: getRef(&kind)}}
+				jsonData, _ := json.Marshal(&tmp)
+				return jsonData, nil
+			} else {
+				var allOf types.HelperSwaggerAllOf
+				arr := make([]json.RawMessage, 0)
+				// obj def
+				objDef := types.SwaggerObjectDef{Ref: getRef(&kind)}
+				jsonData, _ := json.Marshal(&objDef)
+				arr = append(arr, jsonData)
+				// properties related
+				properties := types.HelperSwaggerProperties{Type: "object"}
+				propertiesMap := make(map[string]json.RawMessage)
+				for key, value := range m {
+					rawMsg, err := marshalHttpResponse(value)
+					if err != nil {
+						return nil, err
+					}
+					propertiesMap[key] = rawMsg
+				}
+				properties.Properties = propertiesMap
+				jsonData, _ = json.Marshal(&properties)
+				arr = append(arr, jsonData)
+				allOf.AllOf = arr
+				return json.Marshal(&allOf)
+
+			}
+		}
+	}
+}

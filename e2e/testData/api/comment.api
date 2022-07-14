@@ -1,0 +1,36 @@
+group comment
+
+struct Comment {
+	id: int
+	userId: int
+	comment: int
+
+	# @validator max:10
+	email: string
+}
+
+struct CreateCommentRequest {
+	id: int
+	userId: int
+	comment: int
+}
+
+struct CommentBrief {
+	id: int
+	comment: int
+}
+
+interface CommentController {
+	# @summary 创建评论
+	# @route post /api/comments
+	createComment(req: CreateCommentRequest)
+
+	# @summary 列出评论
+	# @route get /api/comments
+	# Paged<[]Comment>
+	listComments(pageSize: int?, pageNo: int?): [CommentBrief]
+
+	# @summary 获取一条评论
+	# @route get /api/comments/:id
+	getComment(id: int): Comment
+}

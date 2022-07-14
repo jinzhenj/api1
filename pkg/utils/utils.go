@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -46,4 +47,14 @@ func MayCreateDir(path string) error {
 		return nil
 	}
 	return err
+}
+
+func FileExists(path string) (bool, error) {
+	if _, err := os.Stat(path); err == nil {
+		return true, nil
+	} else if errors.Is(err, os.ErrNotExist) {
+		return false, nil
+	} else {
+		return false, err
+	}
 }

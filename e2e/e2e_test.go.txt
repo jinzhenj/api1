@@ -1,0 +1,32 @@
+package e2e
+
+import (
+	"os"
+	"testing"
+
+	"github.com/go-logr/logr"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/api1/pkg/log"
+)
+
+var (
+	testLogger logr.Logger
+	currentDir string
+)
+
+func TestMain(m *testing.M) {
+	currentDir, _ = os.Getwd()
+	testLogger = log.Development(5)
+	os.Exit(m.Run())
+}
+
+func setUp(t *testing.T) {
+	err := os.Chdir("./testData")
+	assert.NoError(t, err)
+}
+
+func tearDown(t *testing.T) {
+	err := os.Chdir(currentDir)
+	assert.NoError(t, err)
+}
