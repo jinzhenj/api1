@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	// "github.com/api1/pkg/parser"
+	// "github.com/jinzhenj/api1/pkg/parser"
 )
 
 //TODO: check attribute
@@ -13,7 +13,7 @@ func TestAddResource(t *testing.T) {
 	defer tearDown(t)
 
 	t.Run("parser_add_resource", func(t *testing.T) {
-		u := tools.NewUpdateApiInterface(testLogger, "pkg/api", "github.com/api1/e2e/testData")
+		u := tools.NewUpdateApiInterface(testLogger, "pkg/api", "github.com/jinzhenj/api1/e2e/testData")
 		err := u.Do()
 		assert.NoError(t, err)
 

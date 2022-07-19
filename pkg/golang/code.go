@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/api1/pkg/utils"
+	"github.com/jinzhenj/api1/pkg/utils"
 )
 
 var (

@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-logr/logr"
 
-	"github.com/api1/pkg/utils"
+	"github.com/jinzhenj/api1/pkg/utils"
 )
 
 type ParserStructFile struct {

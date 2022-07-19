@@ -30,7 +30,7 @@ func TestRegs(t *testing.T) {
 	t.Run("found_go_module", func(t *testing.T) {
 		t1 := `
 
-		module github.com/api1
+		module github.com/jinzhenj/api1
 
 		go 1.17
 		
@@ -43,6 +43,6 @@ func TestRegs(t *testing.T) {
 		`
 		s := reFoundModule.FindAllString(t1, 1)
 		assert.True(t, len(s) == 1)
-		assert.Equal(t, s[0], "module github.com/api1")
+		assert.Equal(t, s[0], "module github.com/jinzhenj/api1")
 	})
 }

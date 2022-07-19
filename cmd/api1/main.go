@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/api1/pkg/all"
-	"github.com/api1/pkg/utils"
+	"github.com/jinzhenj/api1/pkg/all"
+	"github.com/jinzhenj/api1/pkg/utils"
 )
 
 func main() {
@@ -71,14 +71,14 @@ func isApiFile(file string) bool {
 	return strings.HasSuffix(file, ".api")
 }
 
-func info(s string, args ...any) {
+func info(s string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, s+"\n", args...)
 }
 
 func fatal(err error, s ...string) {
 	message := "Error"
 	if len(s) > 0 {
-		var args []any
+		var args []interface{}
 		for _, arg := range s[1:] {
 			args = append(args, arg)
 		}

@@ -7,7 +7,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/api1/pkg/log"
+	"github.com/jinzhenj/api1/pkg/log"
 )
 
 var (

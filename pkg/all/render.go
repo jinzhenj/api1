@@ -1,10 +1,10 @@
 package all
 
 import (
-	"github.com/api1/pkg/api1"
-	"github.com/api1/pkg/golang"
-	"github.com/api1/pkg/openapi"
-	"github.com/api1/pkg/utils"
+	"github.com/jinzhenj/api1/pkg/api1"
+	"github.com/jinzhenj/api1/pkg/golang"
+	"github.com/jinzhenj/api1/pkg/openapi"
+	"github.com/jinzhenj/api1/pkg/utils"
 )
 
 type Render struct {

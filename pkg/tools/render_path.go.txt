@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/api1/pkg/parser"
+	"github.com/jinzhenj/api1/pkg/parser"
 )
 
 func (o RenderSwagger) buildStructDefs() ([]types.StructRecord, error) {

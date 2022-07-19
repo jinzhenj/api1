@@ -1,74 +1,176 @@
+# api1 (api first)
 
+api1 is:
+1. An api definition language
+2. An api doc generating tool (openapi for now)
+3. An api code generating tool (golang server code for now)
 
-# go-swagger
+## api1 definition language specification
 
-## usage
-* cd e2e && go test 后观察生成的 swagger.json 和其他的文件
+Api definition contains 2 parts:
+1. function definitions (which can be invoked)
+2. type/struct definitions (as input/output types of these functions)
 
-## definitions
-* api 
+Most programming languages provides these 2 abilities.
+
+api1(api first) 是一个代码和文档生成工具。这个工具会从 `*.api` 文件中读取api定义，并支持生成：
+
+- 函数声明中用到的结构体类型定义（含输入参数类型或返回类型）
+
+本文档将详细介绍 `*.api` 文件的语法规则。作为api1的使用者，请务必仔细阅读本文档。
+
+## `*.api` 文件语法的设计原则
+
+1. 尽量使用各种语言中常见的数据类型和语法特征。
+2. 会在简单易用和强大的定义能力中寻求平衡点，仅以满足常见api定义需求为目标。
+
+## 参考语言
+
+- golang
+- javascript/typescript
+- kotlin
+- graphql
+- protobuf
+
+## 内建基本类型
+
+|api|golang|javascript|typescript|openapi|
+|--|--|--|--|--|
+|int|int64|number|number|integer|
+|float|float64|number|number|number|
+|string|string|string|string|string|
+|boolean|bool|boolean|boolean|boolean|
+|object|map|object|object|object|
+|any|interface{}|-|any|-|
+
+## 自定义基本类型
+
+例子
+
 ```
-  service user {
-
-  	@doc(
-  		summary: 注册
-  	)
-  	@handler register 
-  	post /api/user/register (pkg.types.RegisterReq)  # pkg.types.RegisterReq 代表 pkg/types 目录下某个文件定义的结构体 RegisterReq
-
-  	@doc(
-  		summary: 登录
-  	)
-  	@handler login
-  	post /api/user/login (pkg.config.LoginReq)
-
-  	@doc(
-  		summary: 获取用户信息
-  	)
-  	@handler getUserInfo
-  	get /api/user/:id (pkg.config.UserInfoReq) return (pkg.config.UserInfoReply)
-
-  	@doc(
-  		summary: 用户搜索
-  	)
-  	@handler searchUser
-  	get /api/user/search (pkg.config.UserSearchReq{list=[]string, records=[]int}) return (pkg.config.UserInfoReply)
-
-  }
-
+scalar datetime
 ```
 
-* struct
+## 枚举类型
+
+枚举类型在api定义中十分常见，枚举类型的定义语法如下：
+
+例子：
+
 ```
-type Field struct {
-	Name     string `json:"name,omitempty" position:"query"`  // query 中的参数
-	Tag      *Tag   `json:"tag,omitempty" position:"path"`    // 路径中的参数
-	Kind     TypeD  `json:"kind,omitempty" position:"path"`   
-	Comments string `json:"comments,omitempty" position:"body"` // json body 中的参数
+enum ProtocolType {
+  TCP
+  UDP
+}
+```
+
+## 结构体类型
+
+结构体类型中包含明确的字段定义，每个字段的类型也都是明确的。
+结构体类型的定义语法如下：
+
+例子：
+
+```
+struct User {
+  id: int
+  name: string
+  email: string
+  admin: boolean
+}
+```
+
+## 数组类型
+
+基本类型、枚举类型、以及结构体类型，均可定义为数组类型。
+定义数组类型的语法如下：
+
+例子：
+
+```
+[string]
+[ProtocolType]
+[User]
+[[int]]  # 数组的数据，即二维数组
+```
+
+## 类型可为空
+
+当类型后面带有 `?` 时，表示当前类型可为空。
+
+例子：
+
+```
+string?    # 可为null的字符串
+[string]?  # 可为null的字符串数组
+[string?]  # 数组中的元素可为null
+```
+
+更多例子：
+
+```
+struct User {
+  name: string
+  address: string?
+  phoneNumbers: [string]?
+}
+```
+
+## 接口
+
+接口中定义了可交互的方法（函数），该方法接受0～N个入参，返回0～1个出参。
+参数类型可以是基本类型、枚举类型、结构体类型或数组类型。
+
+接口类型的定义语法如下：
+
+```
+interface UserController {
+
+  register(req: RegisterReq)
+
+  login(req: LoginReq)
+
+  getUserInfo(req: UserInfoReq): UserInfoResp
+
+  listUsers(pageSize: int, pageNo: int): [User]
+}
+```
+
+## 注释
+
+以 `#` 符号来定义注释
+
+## 语义注释
+
+语义注释是注释的扩展，它类似SQL语言中的Hit，不以语法形式存在。
+语义注释定例子如下：
+
+```
+interface UserController {
+
+  # @route post /user/login
+  login(req: LoginReq)
 }
 
--- 目前要求的所有的结构体都必须定义 pkg/{any folder}/xxx.go 文件，即必须定义在 pkg 子目录下文件。不能是子目录的子目录下的文件
+# @route get /another
+# @go.package some/package
+# @go.someAttr:json|
+#   {
+#     "a": 1,
+#     "b": 2,
+#   }
+interface AnotherController {
+
+}
 ```
 
+## 与package相关的注释
 
-## Features 
-* 解析 golang 结构体
-   * 解析无 Field 注释的结构体 [done]
-   * 解析有 Field 注释的，并将注释作为 swagger descrition 信息 [done]
-   * 解析自定义类型的 golang 结构体 [done]
-   * 支持 type TypeA TypeB 写法
-   * 支持结构体定义不在 pkg/ 目录下
-   * 支持结构体定义在深层次的目录下
-* 生成 swagger
-   * 生成 swager json 文件[done]
-   * 只渲染使用到的 go struct 结构体而非项目中 pkg/ 目录下的结构体
-* 生成的 go 路由接口文件
-  * 生成 go 路由接口文件 [doing]
-  * 覆盖更新路由条目时，如果路由上的注册函数有装饰器则输出提示信息
-  * 生成 go 路由接口文件改用 template 生成  
-* Misc
-   * 日志修改成可以在运行时修改日志等级，根据 flag 设定
-   * 补充说明使用文档 
+## 与web api相关的注释
 
-   
+## 问题：
+1、合法性检查
+2、高亮
+3、代码之间跳转
+
 

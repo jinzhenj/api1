@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/api1/pkg/parser"
+	"github.com/jinzhenj/api1/pkg/parser"
 )
 
 //TODO: check attribute

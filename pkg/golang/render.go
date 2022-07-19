@@ -5,8 +5,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/api1/pkg/api1"
-	"github.com/api1/pkg/utils"
+	"github.com/jinzhenj/api1/pkg/api1"
+	"github.com/jinzhenj/api1/pkg/utils"
 )
 
 const (

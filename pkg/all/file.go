@@ -4,7 +4,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/api1/pkg/utils"
+	"github.com/jinzhenj/api1/pkg/utils"
 )
 
 const (

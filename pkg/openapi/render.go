@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/api1/pkg/api1"
+	"github.com/jinzhenj/api1/pkg/api1"
 )
 
 const (
