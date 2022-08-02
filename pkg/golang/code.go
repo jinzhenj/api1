@@ -33,7 +33,11 @@ func (o *GoEnumOption) Code() string {
 	code := ""
 	code += CodeComments(o.Comments)
 	// o.name := b.Name + pascalCase(o.Name)
-	code += sprintf("%s %s = \"%s\"\n", o.Name, o.TypeName, o.Value)
+	if o.Value.IntVal != nil {
+		code += sprintf("%s %s = %d\n", o.Name, o.TypeName, *o.Value.IntVal)
+	} else {
+		code += sprintf("%s %s = \"%s\"\n", o.Name, o.TypeName, *o.Value.StrVal)
+	}
 	return code
 }
 
@@ -51,16 +55,17 @@ func CodeEnumOptions(options []GoEnumOption) string {
 
 func (b *GoEnumCodeBlock) Code() string {
 	code := ""
+	baseType := b.BaseType.Code()
 	code += CodeComments(b.Comments)
-	code += sprintf("type %s string\n", b.Name)
+	code += sprintf("type %s %s\n", b.Name, baseType)
 	code += CodeEnumOptions(b.Options)
 	code += "\n"
 	code += sprintf("func (o %s) IsValid() bool {\n", b.Name)
 	if len(b.Options) > 0 {
-		code += indent("switch string(o) {\n")
+		code += indent(sprintf("switch %s(o) {\n", baseType))
 		code += indent("case\n")
 		for i, opt := range b.Options {
-			code += indent(indent(sprintf("string(%s)", opt.Name)))
+			code += indent(indent(sprintf("%s(%s)", baseType, opt.Name)))
 			if i < len(b.Options)-1 {
 				code += ",\n"
 			} else {

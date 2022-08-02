@@ -102,17 +102,38 @@ func (o *Render) renderSchemaScalar(sc api1.ScalarType) *Schema {
 func (o *Render) renderSchemaEnum(en api1.EnumType) *Schema {
 	s := Schema{
 		Type:        "string",
-		Description: strings.Join(en.Comments, " "),
+		Description: strings.Join(en.Comments, "\n\n"),
 	}
 	if _, ok := en.SemComments["deprecated"]; ok {
 		s.Deprecated = true
 	}
+
+	if len(s.Description) > 0 {
+		s.Description += "\n\n"
+	}
+	s.Description += "### Items:\n"
+
 	for _, o := range en.Options {
-		s.Enum = append(s.Enum, o.Name)
-		if o.Comments != nil && len(o.Comments) > 0 {
-			s.Description +=
-				fmt.Sprintf("\n%s: %s", o.Name, strings.Join(o.Comments, " "))
+		var value interface{}
+		if o.Value == nil {
+			value = o.Name
+		} else if o.Value.IntVal != nil {
+			s.Type = "integer"
+			value = *o.Value.IntVal
+		} else {
+			value = *o.Value.StrVal
 		}
+
+		var comments string
+		if o.Comments != nil {
+			comments = strings.Join(o.Comments, " ")
+			if len(comments) > 0 {
+				comments = ": " + comments
+			}
+		}
+
+		s.Enum = append(s.Enum, value)
+		s.Description += fmt.Sprintf("- %s (%v) %s\n", o.Name, value, comments)
 	}
 	return &s
 }
@@ -120,7 +141,7 @@ func (o *Render) renderSchemaEnum(en api1.EnumType) *Schema {
 func (o *Render) renderSchemaObject(st api1.StructType) (*Schema, error) {
 	s := Schema{
 		Type:        "object",
-		Description: strings.Join(st.Comments, " "),
+		Description: strings.Join(st.Comments, "\n\n"),
 		Properties:  make(map[string]Schema),
 	}
 	if _, ok := st.SemComments["deprecated"]; ok {
@@ -135,7 +156,7 @@ func (o *Render) renderSchemaObject(st api1.StructType) (*Schema, error) {
 			s.Required = append(s.Required, field.Name)
 		}
 		if property.Ref == "" {
-			property.Description = strings.Join(field.Comments, " ")
+			property.Description = strings.Join(field.Comments, "\n\n")
 		}
 		s.Properties[field.Name] = *property
 	}
@@ -177,7 +198,7 @@ func (o *Render) renderPaths(s *api1.Schema) (Paths, error) {
 func (o *Render) renderOperation(iface *api1.Iface, fun *api1.Fun, method Method, pathParams []string) (*Operation, error) {
 	operation := Operation{
 		Tags:        []string{iface.Name},
-		Description: strings.Join(fun.Comments, " "),
+		Description: strings.Join(fun.Comments, "\n\n"),
 		OperationID: fun.Name,
 	}
 	if summary, ok := fun.SemComments["summary"].(string); ok {
@@ -219,7 +240,7 @@ func (o *Render) renderParameters(iface *api1.Iface, fun *api1.Fun, method Metho
 			content := make(map[string]MediaType)
 			content[mimeJson] = MediaType{Schema: s}
 			requestBody = &RequestBody{
-				Description: strings.Join(param.Comments, " "),
+				Description: strings.Join(param.Comments, "\n\n"),
 				Content:     content,
 				Required:    required,
 			}
@@ -229,7 +250,7 @@ func (o *Render) renderParameters(iface *api1.Iface, fun *api1.Fun, method Metho
 		p := Parameter{
 			Name:        param.Name,
 			In:          parsePosition(string(param.In)),
-			Description: strings.Join(param.Comments, " "),
+			Description: strings.Join(param.Comments, "\n\n"),
 			Required:    required,
 			Schema:      s,
 		}

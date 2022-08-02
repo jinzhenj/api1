@@ -22,9 +22,15 @@ type ScalarType struct {
 	HasComments
 }
 
+type IntOrString struct {
+	IntVal *int64  `json:"intVal,omitempty"`
+	StrVal *string `json:"strVal,omitempty"`
+}
+
 type EnumOption struct {
 	HasName
 	HasComments
+	Value *IntOrString `json:"value,omitempty"`
 }
 
 type EnumType struct {

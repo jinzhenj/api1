@@ -86,3 +86,49 @@ func TestRender(t *testing.T) {
 	t.Log(r2.Code())
 
 }
+
+func TestRenderEnum(t *testing.T) {
+	parser := api1.Parser{}
+	r := Render{}
+
+	t1 := `
+	  group t1
+
+		enum E1 {
+			O1
+			O2
+		}
+
+		enum E2 {
+			O1 = 1,
+			O2 = 2,
+		}
+	`
+
+	schema, err := parser.Parse(t1)
+	if err != nil {
+		t.Fatalf("Parse error: %v", err)
+	}
+
+	r1 := r.renderEnum(&schema.Groups[0].EnumTypes[0])
+	assert.Equal(t, "E1", r1.Name)
+	assert.Equal(t, "string", r1.BaseType.Name)
+	assert.Equal(t, 2, len(r1.Options))
+	assert.Equal(t, "E1O1", r1.Options[0].Name)
+	assert.Equal(t, "E1", r1.Options[0].TypeName)
+	assert.Equal(t, "O1", *r1.Options[0].Value.StrVal)
+	assert.Equal(t, "E1O2", r1.Options[1].Name)
+	assert.Equal(t, "E1", r1.Options[1].TypeName)
+	assert.Equal(t, "O2", *r1.Options[1].Value.StrVal)
+
+	r2 := r.renderEnum(&schema.Groups[0].EnumTypes[1])
+	assert.Equal(t, "E2", r2.Name)
+	assert.Equal(t, "int64", r2.BaseType.Name)
+	assert.Equal(t, 2, len(r2.Options))
+	assert.Equal(t, "E2O1", r2.Options[0].Name)
+	assert.Equal(t, "E2", r2.Options[0].TypeName)
+	assert.Equal(t, int64(1), *r2.Options[0].Value.IntVal)
+	assert.Equal(t, "E2O2", r2.Options[1].Name)
+	assert.Equal(t, "E2", r2.Options[1].TypeName)
+	assert.Equal(t, int64(2), *r2.Options[1].Value.IntVal)
+}

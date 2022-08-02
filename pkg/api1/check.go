@@ -142,6 +142,26 @@ func (schema *Schema) Check() error {
 			}
 		}
 	}
+
+	// check enum options' value have same type
+	for _, g := range schema.Groups {
+		for _, en := range g.EnumTypes {
+			var findNoVal, findIntVal, findStrVal bool
+			for _, option := range en.Options {
+				if option.Value == nil {
+					findNoVal = true
+				} else if option.Value.IntVal != nil {
+					findIntVal = true
+				} else {
+					findStrVal = true
+				}
+			}
+			if findIntVal && (findNoVal || findStrVal) {
+				return errors.Errorf("Enum [%s] has mixed value types", en.Name)
+			}
+		}
+	}
+
 	// group duplicated???
 	// check pkg not empty
 	// check struct, enum, interface is not empty

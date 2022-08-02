@@ -181,13 +181,24 @@ func (r *Render) renderEnum(en *api1.EnumType) *GoEnumCodeBlock {
 	e := GoEnumCodeBlock{
 		Comments: en.Comments,
 		Name:     en.Name,
+		BaseType: &GoType{Name: "string"},
 	}
 	for _, op := range en.Options {
+		var value IntOrString
+		if op.Value == nil {
+			strVal := op.Name
+			value.StrVal = &strVal
+		} else if op.Value.IntVal != nil {
+			e.BaseType = &GoType{Name: "int64"}
+			value.IntVal = op.Value.IntVal
+		} else {
+			value.StrVal = op.Value.StrVal
+		}
 		e.Options = append(e.Options, GoEnumOption{
 			Comments: op.Comments,
 			Name:     fmt.Sprintf("%s%s", en.Name, utils.PascalCase(op.Name)),
 			TypeName: en.Name,
-			Value:    op.Name,
+			Value:    value,
 		})
 	}
 	return &e

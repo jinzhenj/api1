@@ -113,10 +113,10 @@ type Schema struct {
 	UniqueItems *int    `json:"uniqueItems,omitempty"`
 
 	// string
-	Enum      []string `json:"enum,omitempty"`
-	Pattern   string   `json:"pattern,omitempty"`
-	MinLength *int     `json:"minLength,omitempty"`
-	MaxLength *int     `json:"maxLength,omitempty"`
+	Enum      []interface{} `json:"enum,omitempty"`
+	Pattern   string        `json:"pattern,omitempty"`
+	MinLength *int          `json:"minLength,omitempty"`
+	MaxLength *int          `json:"maxLength,omitempty"`
 
 	// integer|number
 	MultipleOf       *float64 `json:"multipleOf,omitempty"`

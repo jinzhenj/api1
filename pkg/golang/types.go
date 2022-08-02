@@ -9,16 +9,22 @@ type GoTypeDef struct {
 	Type *GoType
 }
 
+type IntOrString struct {
+	IntVal *int64
+	StrVal *string
+}
+
 type GoEnumOption struct {
 	Comments []string
 	Name     string
 	TypeName string
-	Value    string
+	Value    IntOrString
 }
 
 type GoEnumCodeBlock struct {
 	Comments []string
 	Name     string
+	BaseType *GoType
 	Options  []GoEnumOption
 }
 

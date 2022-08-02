@@ -3,6 +3,7 @@ package golang
 import (
 	"testing"
 
+	"github.com/jinzhenj/api1/pkg/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -11,7 +12,8 @@ func TestCodeGen(t *testing.T) {
 		Comments: []string{
 			"This is user role",
 		},
-		Name: "Role",
+		Name:     "Role",
+		BaseType: &GoType{Name: "string"},
 		Options: []GoEnumOption{
 			{
 				Comments: []string{
@@ -19,7 +21,9 @@ func TestCodeGen(t *testing.T) {
 				},
 				Name:     "RoleAdmin",
 				TypeName: "Role",
-				Value:    "ADMIN",
+				Value: IntOrString{
+					StrVal: utils.StringPtr("ADMIN"),
+				},
 			},
 			{
 				Comments: []string{
@@ -27,7 +31,9 @@ func TestCodeGen(t *testing.T) {
 				},
 				Name:     "RoleUser",
 				TypeName: "Role",
-				Value:    "USER",
+				Value: IntOrString{
+					StrVal: utils.StringPtr("USER"),
+				},
 			},
 		},
 	}

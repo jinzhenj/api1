@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -22,7 +23,7 @@ var reSemComment = compile("^\\s*%s([0-9A-Za-z_.]+?)(?::(json|ya?ml))?(?:|\\s*([
 var reGroup = compile("^group\\s+(%s)$", tID)
 var reScalar = compile("^scalar\\s+(%s)$", tID)
 var reBlockStart = compile("^(enum|struct|interface)\\s+(%s)\\s*\\{$", tID)
-var reEnumOption = compile("^(%s)$", tID)
+var reEnumOption = compile("^(%s)(?:\\s*=\\s*(?:([0-9]+?)|\"(.+?)\"))?\\s*,?$", tID)
 var reStructField = compile("^(%s)\\s*:\\s*(%s)$", tID, tType)
 var reFunInline = compile("^(%s)\\s*\\((.*?)\\)(?:\\s*:\\s*(%s))?$", tID, tType)
 var reFunStart = compile("^(%s)\\s*\\(\\s*(.*?)$", tID)
@@ -265,6 +266,18 @@ func (p *Parser) parseEnumOption(line string) (*EnumOption, error) {
 	if m := reEnumOption.FindStringSubmatch(line); m != nil {
 		option := &EnumOption{}
 		option.Name = m[1]
+		if len(m[2]) > 0 {
+			val, err := strconv.ParseInt(m[2], 10, 64)
+			if err != nil {
+				return nil, errors.Wrapf(err,
+					"invalid int value [%s] for enum option", m[2])
+			}
+			option.Value = &IntOrString{IntVal: &val}
+		}
+		if len(m[3]) > 0 {
+			val := m[3]
+			option.Value = &IntOrString{StrVal: &val}
+		}
 		option.HasComments, err = p.flushComments()
 		if err != nil {
 			return nil, err

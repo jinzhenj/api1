@@ -64,6 +64,26 @@ enum ProtocolType {
 }
 ```
 
+枚举项使用自定义Value的例子：
+
+```
+enum Colour {
+  RED = "red"
+  GREEN = "green"
+  BLUE = "blue"
+}
+```
+
+枚举项使用数值型Value的例子：
+
+```
+enum Colour {
+  RED = 1
+  GREEN = 2
+  BLUE = 3
+}
+```
+
 ## 结构体类型
 
 结构体类型中包含明确的字段定义，每个字段的类型也都是明确的。

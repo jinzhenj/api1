@@ -100,11 +100,66 @@ func TestCheck(t *testing.T) {
 			f1(): void
 		}
 	`
+	t11 := `
+    # test enum value type not mixed
+		group t11
 
-	testcases := []string{t1, t01, t2, t3, t4, t5, t6, t7, t8, t9, t10}
+		enum E11 {
+			O1 = 1
+			O2 = 2
+		}
+	`
+
+	t12 := `
+    # test enum value type not mixed
+		group t12
+
+		enum E12 {
+			O1 = "str1"
+			O2 = "str2"
+		}
+	`
+
+	t13 := `
+    # test enum value type not mixed
+		group t13
+
+		enum E13 {
+			O1 = 1
+			O2 = 2
+		}
+	`
+
+	t14 := `
+    # test enum value type not mixed
+		group t14
+
+		enum E14 {
+			O1 = 1
+			O2 = "str2"
+		}
+	`
+
+	t15 := `
+    # test enum value type not mixed
+		group t15
+
+		enum E15 {
+			O1 = 1
+			O2
+		}
+	`
+
+	testcases := []string{t1, t01, t2, t3, t4, t5, t6, t7, t8, t9, t10, t14, t15}
 	for _, testcase := range testcases {
 		_, err = parser.Parse(testcase)
 		t.Log(err)
 		assert.Error(t, err)
+	}
+
+	testcases2 := []string{t11, t12, t13}
+	for _, testcase := range testcases2 {
+		_, err = parser.Parse(testcase)
+		assert.NoError(t, err)
 	}
 }

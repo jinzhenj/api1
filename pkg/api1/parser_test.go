@@ -287,6 +287,44 @@ interface LoginController {
 	}
 }
 
+func TestParseEnum(t *testing.T) {
+	fmt.Println("Start")
+
+	parser := Parser{}
+	t5 := `
+	group enumTest
+
+	enum Role {
+		Admin,
+		Operator,
+		NormalUser,
+	}
+
+  enum Role2 {
+    Admin = "admin"
+    Operator = "operator"
+    NormalUser = "normal"
+  }	
+
+  enum Role3 {
+    Admin
+    Operator
+    NormalUser = "normal"
+  }
+
+  enum Role4 {
+    Admin = 1
+    Operator = 2
+    NormalUser = 3
+  }
+	`
+	if schema, err := parser.Parse(t5); err != nil {
+		t.Fatalf("Parse error: %v", err)
+	} else {
+		fmt.Println(dump(schema))
+	}
+}
+
 func dump(o interface{}) string {
 	b, _ := json.MarshalIndent(o, "", "  ")
 	return string(b)
