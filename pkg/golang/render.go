@@ -376,8 +376,12 @@ func (r *Render) renderRouteStmt(iface *api1.Iface, fun *api1.Fun) (GoStatement,
 	if middleware, ok := fun.SemComments["go.middleware"]; ok {
 		if middlewareStr, ok := middleware.(string); ok {
 			stmt.Middlewares = append(stmt.Middlewares, middlewareStr)
-		} else if middlewares, ok := middleware.([]string); ok {
-			stmt.Middlewares = append(stmt.Middlewares, middlewares...)
+		} else if middlewares, ok := middleware.([]interface{}); ok {
+			for _, mid := range middlewares {
+				if midStr, ok := mid.(string); ok {
+					stmt.Middlewares = append(stmt.Middlewares, midStr)
+				}
+			}
 		}
 	}
 

@@ -32,7 +32,7 @@ api1(api first) 是一个代码和文档生成工具。这个工具会从 `*.api
 - graphql
 - protobuf
 
-## 内建基本类型
+## Built-in Scalar Types
 
 |api|golang|javascript|typescript|openapi|
 |--|--|--|--|--|
@@ -43,7 +43,7 @@ api1(api first) 是一个代码和文档生成工具。这个工具会从 `*.api
 |object|map|object|object|object|
 |any|interface{}|-|any|-|
 
-## 自定义基本类型
+## Custom Scalar Types
 
 例子
 
@@ -183,6 +183,169 @@ interface AnotherController {
 
 }
 ```
+
+## Known Semantic Comments
+
+## `@route`
+
+used for: `Fun`
+
+Function is a rest route handler.
+
+Example:
+
+```
+interface user {
+
+  # @route get /users/:id
+  getUser(id: int): User
+}
+```
+
+## `@omitempty`
+
+used for: `StructField`
+
+Field won't return if it is empty.
+
+Example:
+
+```
+struct User {
+  name: string
+
+  # @omitempty
+  address: string
+}
+```
+
+## `@ignore`
+
+used for: `StructField`
+
+Field won't return.
+
+Example:
+
+```
+struct User {
+  name: string
+
+  # @ignore
+  password: string
+}
+```
+
+## `@go.type`
+
+used for: `Scalar`, `StructField`, `Param`, `Fun`
+
+Specify golang type for scalar or typeRef.
+
+Example:
+
+```
+# @go.type uint64
+scalar Timestamp
+
+struct User {
+  
+  # @go.type map[string]string
+  properties: object
+}
+
+interface user {
+
+  # @route get /users/:id/properties
+  # @go.type map[string]string
+  getProperties(id: int): object
+ 
+  # @route put /users/:id/properties
+  setProperties(
+    id: int,
+
+    # @go.type map[string]string
+    properties: object
+  )
+}
+```
+
+## `@go.middleware`
+
+used for: `Fun`
+
+Add middleware for golang route handler
+
+Example:
+
+```
+interface TypeController {
+
+  # @route get /types
+  listTypes(): [Type]
+
+  # @route put /types/:id
+  # @go.middleware adminRequired
+  modifyType(id: int, type: Type)
+}
+```
+
+## `@go.validator`
+
+used for: `StructField`, `Param`
+
+Add validator for field or param.
+
+Example:
+
+```
+struct UserLoginRequest {
+  # @go.validator: email
+  email: string
+  password: string
+}
+
+interface LoginController {
+
+  # @route post /actions/checkUserExists
+  checkUserExists(
+    # @go.validator email
+    email: string
+  ): boolean
+}
+```
+
+## `@go.tag`
+
+used for: `StructField`
+
+Add struct tag for golang struct field.
+
+Example:
+
+```
+struct User {
+  # @go.tag gorm:"uniqueIndex"
+  email: string
+}
+```
+
+## `@go.package`
+
+## `@go.import`
+
+## `@ts.modifier`
+
+## `@deprecated`
+
+## `@default`
+
+## `@minimum` & `@maximum`
+
+## `@minLength` & `@maxLength`
+
+
+
 
 ## 与package相关的注释
 
