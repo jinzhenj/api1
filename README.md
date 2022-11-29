@@ -51,6 +51,39 @@ api1(api first) 是一个代码和文档生成工具。这个工具会从 `*.api
 scalar datetime
 ```
 
+## Real world scalar types
+
+```
+# @go.type string
+# @openapi.type string
+# @openapi.format password
+scalar Password
+
+# example: 2022-11-29T03:09:18.031Z
+# @go.type time/Time
+# @openapi.type string
+# @openapi.format date-time
+scalar Time
+
+# example: 1669691224000
+# @go.type int64
+# @go.typeDef
+# @openapi.type integer
+scalar Timestamp
+
+# example: 2006/01/02 15:04
+# @go.type string
+# @go.typeDef
+# @openapi.type string
+scalar TimeTillMinute
+
+# @go.type *multipart.FileHeader
+# @go.typePkg mime/multipart
+# @openapi.type string
+# @openapi.format binary
+scalar MultipartFile
+```
+
 ## 枚举类型
 
 枚举类型在api定义中十分常见，枚举类型的定义语法如下：
@@ -344,8 +377,27 @@ struct User {
 
 ## `@minLength` & `@maxLength`
 
+## `@form` & `@accept`
 
+```
+# @go.type *multipart.FileHeader
+# @go.typePkg mime/multipart
+# @openapi.type string
+# @openapi.format binary
+scalar MultipartFile
 
+# @form
+struct UploadInfo {
+  file: MultipartFile
+  path: string
+}
+
+interface UploadApi {
+  # @route post /actions/upload
+  # @accept multipart/form-data
+  doUpload(req: UploadInfo): object
+}
+```
 
 ## 与package相关的注释
 

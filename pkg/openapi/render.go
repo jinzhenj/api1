@@ -11,6 +11,7 @@ const (
 	OpenAPIVersion = "3.0.3"
 	refPrefix      = "#/components/schemas/"
 	mimeJson       = "application/json"
+	mimeFormData   = "multipart/form-data"
 )
 
 type Render struct {
@@ -94,7 +95,11 @@ func (o *Render) renderSchemaRef(t *api1.TypeRef) (*Schema, bool) {
 
 func (o *Render) renderSchemaScalar(sc api1.ScalarType) *Schema {
 	if typ, ok := sc.SemComments["openapi.type"].(string); ok {
-		return &Schema{Type: typ}
+		s := &Schema{Type: typ}
+		if format, ok := sc.SemComments["openapi.format"].(string); ok {
+			s.Format = format
+		}
+		return s
 	}
 	return nil
 }
@@ -237,8 +242,14 @@ func (o *Render) renderParameters(iface *api1.Iface, fun *api1.Fun, method Metho
 		s, required := o.renderSchemaRef(param.Type)
 
 		if param.In == api1.PositionBody {
+			contentType, ok := fun.SemComments["accept"].(string)
+			if !ok {
+				contentType = mimeJson
+			}
+
 			content := make(map[string]MediaType)
-			content[mimeJson] = MediaType{Schema: s}
+			content[contentType] = MediaType{Schema: s}
+
 			requestBody = &RequestBody{
 				Description: strings.Join(param.Comments, "\n\n"),
 				Content:     content,

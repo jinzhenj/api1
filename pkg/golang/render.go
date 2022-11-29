@@ -209,24 +209,30 @@ func (r *Render) renderStruct(st *api1.StructType) *GoStructType {
 		Comments: st.Comments,
 		Name:     st.Name,
 	}
+	_, hasForm := st.SemComments["form"]
 	for _, sf := range st.Fields {
-		s.Fields = append(s.Fields, r.renderStructField(&sf))
+		s.Fields = append(s.Fields, r.renderStructField(&sf, hasForm))
 	}
 	return &s
 }
 
-func (r *Render) renderStructField(sf *api1.StructField) GoStructField {
+func (r *Render) renderStructField(sf *api1.StructField, hasForm bool) GoStructField {
 	f := GoStructField{
 		Comments: sf.Comments,
 		Name:     utils.PascalCase(sf.Name),
 		Type:     r.renderType(sf.Type, sf.SemComments),
-		Tags:     map[string]string{"json": sf.Name},
+		Tags:     make(map[string]string),
 	}
+	tagValue := sf.Name
 	if _, ok := sf.SemComments["omitempty"]; ok {
-		f.Tags["json"] = sf.Name + ",omitempty"
+		tagValue = sf.Name + ",omitempty"
 	}
 	if _, ok := sf.SemComments["ignore"]; ok {
-		f.Tags["json"] = "-"
+		tagValue = "-"
+	}
+	f.Tags["json"] = tagValue
+	if hasForm {
+		f.Tags["form"] = tagValue
 	}
 	return f
 }

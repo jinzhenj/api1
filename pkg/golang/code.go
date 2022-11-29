@@ -2,6 +2,7 @@ package golang
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/jinzhenj/api1/pkg/utils"
@@ -119,8 +120,18 @@ func CodeTags(tags map[string]string) string {
 	if len(tags) == 0 {
 		return ""
 	}
+
+	keys := make([]string, 0, len(tags))
+	for k := range tags {
+		keys = append(keys, k)
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		return keys[i] < keys[j]
+	})
+
 	var a []string
-	for k, v := range tags {
+	for _, k := range keys {
+		v := tags[k]
 		a = append(a, sprintf("%s:\"%s\"", k, v))
 	}
 	return sprintf("`%s`", strings.Join(a, " "))
@@ -229,7 +240,7 @@ func (route *RouteStatement) Code() string {
 		param := route.BodyParam
 		block := "\n"
 		block += sprintf("var %s %s\n", param.Name, param.Type.Code())
-		block += sprintf("if _err := _c.ShouldBindJSON(&%s); _err != nil {\n", param.Name)
+		block += sprintf("if _err := _c.ShouldBind(&%s); _err != nil {\n", param.Name)
 		block += "  return _err\n"
 		block += "}\n"
 		code += indent(block)
