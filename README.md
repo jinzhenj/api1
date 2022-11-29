@@ -34,14 +34,14 @@ api1(api first) 是一个代码和文档生成工具。这个工具会从 `*.api
 
 ## Built-in Scalar Types
 
-|api|golang|javascript|typescript|openapi|
-|--|--|--|--|--|
-|int|int64|number|number|integer|
-|float|float64|number|number|number|
-|string|string|string|string|string|
-|boolean|bool|boolean|boolean|boolean|
-|object|map|object|object|object|
-|any|interface{}|-|any|-|
+|api|golang|javascript|typescript|openapi|python|
+|--|--|--|--|--|--|
+|int|int64|number|number|integer|int|
+|float|float64|number|number|number|float|
+|string|string|string|string|string|str|
+|boolean|bool|boolean|boolean|boolean|bool|
+|object|map|object|object|object|dict|
+|any|interface{}|-|any|oneOf[]|typing.Any|
 
 ## Custom Scalar Types
 

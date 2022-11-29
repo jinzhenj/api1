@@ -62,6 +62,8 @@ type Fun struct {
 	HasComments
 	Params []Param  `json:"params"`
 	Type   *TypeRef `json:"type"`
+	// post-processed field, not parsed
+	Route *RouteInfo `json:"route,omitempty"`
 }
 
 type Iface struct {

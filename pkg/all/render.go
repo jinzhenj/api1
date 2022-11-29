@@ -27,6 +27,9 @@ func (r *Render) RenderFiles(files []string) ([]CodeFile, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err = schema.SupplyRouteInfo(); err != nil {
+		return nil, err
+	}
 	openAPI, err := r.openapiRender.Render(schema)
 	if err != nil {
 		return nil, err

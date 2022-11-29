@@ -172,3 +172,37 @@ func (p *RouteParser) ParseParams(iface *Iface, fun *Fun, pathParams []string) (
 
 	return params, nil
 }
+
+type RouteInfo struct {
+	Method   string              `json:"method"`
+	Path     string              `json:"path"`
+	ParamsIn map[string]Position `json:"paramsIn"`
+}
+
+func (s *Schema) SupplyRouteInfo() error {
+	rParser := &RouteParser{}
+	rParser.LoadSchema(s)
+
+	for _, g := range s.Groups {
+		for _, iface := range g.Ifaces {
+			for i := range iface.Funs {
+				if route, ok := iface.Funs[i].SemComments["route"].(string); ok {
+					method, path, pathParams, err := ParseRoute(route, PathStyleColon)
+					if err != nil {
+						return err
+					}
+					params, err := rParser.ParseParams(&iface, &iface.Funs[i], pathParams)
+					if err != nil {
+						return err
+					}
+					paramsIn := make(map[string]Position)
+					for _, param := range params {
+						paramsIn[param.Name] = param.In
+					}
+					iface.Funs[i].Route = &RouteInfo{method, path, paramsIn}
+				}
+			}
+		}
+	}
+	return nil
+}
