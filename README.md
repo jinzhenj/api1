@@ -1,5 +1,11 @@
 # api1 (api first)
 
+# Quick Install
+
+```
+go install github.com/jinzhenj/api1/cmd/api1@v0.2.0
+```
+
 api1 is:
 1. An api definition language
 2. An api doc generating tool (openapi for now)
@@ -232,6 +238,28 @@ interface user {
 
   # @route get /users/:id
   getUser(id: int): User
+}
+```
+
+## `@route.in`
+
+used for: `Scalar`
+
+To specify the position a scalar type should be put in
+when using as a route param (instead of query param by default).
+
+known values: `body` (consider support `header` & `cookie` in future.)
+
+Example:
+
+```
+# @route.in body
+scalar DataObject
+
+interface data {
+
+  # @route post /data/:id
+  postData(id: int, data: DataObject): DataObject
 }
 ```
 

@@ -72,23 +72,24 @@ const (
 )
 
 type RouteParser struct {
-	types map[string]TypeKind
+	typeInBody map[string]bool
 }
 
 func (p *RouteParser) LoadSchema(schema *Schema) {
-	p.types = make(map[string]TypeKind)
+	p.typeInBody = make(map[string]bool)
 	if schema == nil {
 		return
 	}
 	for _, g := range schema.Groups {
 		for _, sc := range g.ScalarTypes {
-			p.types[sc.Name] = TypeKindScalar
+			position, ok := sc.SemComments["route.in"].(string)
+			p.typeInBody[sc.Name] = (ok && position == "body")
 		}
 		for _, en := range g.EnumTypes {
-			p.types[en.Name] = TypeKindEnum
+			p.typeInBody[en.Name] = false
 		}
 		for _, st := range g.StructTypes {
-			p.types[st.Name] = TypeKindStruct
+			p.typeInBody[st.Name] = true
 		}
 	}
 }
@@ -107,19 +108,8 @@ func (p *RouteParser) IsBodyParam(t *TypeRef) bool {
 		t.Name == "string" || t.Name == "boolean" {
 		return false
 	}
-	kind, ok := p.types[t.Name]
-	if !ok {
-		return false
-	}
-	switch kind {
-	case TypeKindEnum:
-		return false
-	case TypeKindStruct:
-		return true
-	case TypeKindScalar:
-		return false // TODO: return false for temp
-	}
-	return false
+	inBody, ok := p.typeInBody[t.Name]
+	return ok && inBody
 }
 
 func (p *RouteParser) ParseParams(iface *Iface, fun *Fun, pathParams []string) ([]RouteParam, error) {
