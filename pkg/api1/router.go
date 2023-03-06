@@ -9,7 +9,11 @@ import (
 )
 
 var resID = "[A-Za-z][0-9A-Za-z_]*?"
-var rePathParam = utils.Compile("^(?::(%s)|\\{(%s)\\})$", resID, resID)
+
+// m[1] = [:*] (maybe)
+// m[2] = paramName (maybe)
+// m[3] = paramName (maybe)
+var rePathParam = utils.Compile("^(?:([:*])(%s)|\\{(%s)\\})$", resID, resID)
 var reRoute = utils.Compile("(?i)^\\s*(get|put|post|delete|options|head|patch|trace)\\s+(.+?)\\s*$")
 
 type PathStyle int
@@ -19,18 +23,21 @@ const (
 	PathStyleColon PathStyle = 1
 )
 
-var tplByStyle = map[PathStyle]string{
-	PathStyleBrace: "{%s}",
-	PathStyleColon: ":%s",
-}
-
 func ParsePath(s string, style PathStyle) (string, []string) {
 	var pathParams []string
 	parts := strings.Split(s, "/")
 	for i, part := range parts {
 		if m := rePathParam.FindStringSubmatch(part); m != nil {
-			paramName := m[1] + m[2]
-			parts[i] = fmt.Sprintf(tplByStyle[style], paramName)
+			paramName := m[2] + m[3]
+			if style == PathStyleBrace {
+				parts[i] = fmt.Sprintf("{%s}", paramName)
+			} else {
+				prefix := m[1]
+				if len(prefix) == 0 {
+					prefix = ":"
+				}
+				parts[i] = fmt.Sprintf("%s%s", prefix, paramName)
+			}
 			pathParams = append(pathParams, paramName)
 		}
 	}
