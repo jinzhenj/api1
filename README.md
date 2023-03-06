@@ -3,7 +3,7 @@
 # Quick Install
 
 ```
-go install github.com/jinzhenj/api1/cmd/api1@v0.2.1
+go install github.com/jinzhenj/api1/cmd/api1@v0.2.2
 ```
 
 api1 is:
